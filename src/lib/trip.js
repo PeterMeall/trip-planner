@@ -1,3 +1,4 @@
+import { t } from './i18n.js';
 import { tm, dShort, money, toHome, toLocal, nameOf, TYPE_TO_CAT } from './util.js';
 
 export const isStay = (it) => it.type === 'hotel';
@@ -13,32 +14,34 @@ export const staysFor = (items, date) => {
 
 export const bandText = (items, date) => {
   const { night, out } = staysFor(items, date);
-  if (night && out) return 'Check out ' + out.title + (out.end ? ' by ' + out.end : '') + ' · ' + night.title + (night.start ? ' from ' + night.start : '');
-  if (night && night.date === date) return 'Check in at ' + night.title + (night.start ? ' from ' + night.start : '');
-  if (night) return 'Staying at ' + night.title;
-  if (out) return 'Check out ' + out.title + (out.end ? ' by ' + out.end : '');
-  return 'No stay added for tonight';
+  const outText = (o) => (o.end ? t('Check out {name} by {time}', { name: o.title, time: o.end }) : t('Check out {name}', { name: o.title }));
+  const inText = (n) => (n.start ? t('{name} from {time}', { name: n.title, time: n.start }) : n.title);
+  if (night && out) return outText(out) + ' · ' + inText(night);
+  if (night && night.date === date) return night.start ? t('Check in at {name} from {time}', { name: night.title, time: night.start }) : t('Check in at {name}', { name: night.title });
+  if (night) return t('Staying at {name}', { name: night.title });
+  if (out) return outText(out);
+  return t('No stay added for tonight');
 };
 
 export const dayLabel = (days, date) => {
   const i = days.indexOf(date);
-  return (i >= 0 ? 'Day ' + (i + 1) + ' · ' : '') + dShort(date);
+  return (i >= 0 ? t('Day {n}', { n: i + 1 }) + ' · ' : '') + dShort(date);
 };
 
 export const timeLabel = (it) => {
-  if (isStay(it)) return dShort(it.date) + ' to ' + dShort(it.endDate || it.date);
-  if (it.allDay) return 'All day';
+  if (isStay(it)) return t('{from} to {to}', { from: dShort(it.date), to: dShort(it.endDate || it.date) });
+  if (it.allDay) return t('All day');
   return it.start + (it.end && it.end !== it.start ? '–' + it.end : '');
 };
 
 export const costText = (it, trip) => {
-  if (!it.price) return 'No cost added';
+  if (!it.price) return t('No cost added');
   const local = trip.localCurrency || 'THB';
   const home = trip.homeCurrency || 'EUR';
   const main = money(it.price, it.cur);
   const other = it.cur === home ? money(toLocal(it.price, it.cur, trip), local) : money(toHome(it.price, it.cur, trip), home);
-  const split = it.split === 'payer' ? 'not split' : 'split equally';
-  return main + ' (≈ ' + other + ') · paid by ' + nameOf(trip, it.paidBy) + ', ' + split;
+  const split = it.split === 'payer' ? t('not split') : t('split equally');
+  return main + ' (≈ ' + other + ') · ' + t('paid by {name}', { name: nameOf(trip, it.paidBy) }) + ', ' + split;
 };
 
 // All expenses: priced itinerary items plus ones added by hand.

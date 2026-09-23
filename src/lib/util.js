@@ -1,31 +1,33 @@
+import { t, getLang } from './i18n.js';
+
 // Shared helpers: types, dates, money, maps.
 
 export const TYPES = {
-  flight: { label: 'Flight', bg: '#E6ECF4', fg: '#2C5282', icon: 'M3 13l18-7-7 18-2-8-9-3z' },
-  hotel: { label: 'Stay', bg: '#F4E2EA', fg: '#7A3566', icon: 'M3 19V6M3 14h18v5M21 14v-2a3 3 0 0 0-3-3h-7v5M7 12a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z' },
-  activity: { label: 'Activity', bg: '#E2EFDC', fg: '#3A6528', icon: 'M12 3l2.6 5.6 6 .7-4.5 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.4 9.3l6-.7z' },
-  food: { label: 'Food', bg: '#FBE4CF', fg: '#9A4A0E', icon: 'M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 1-3 3-3 6v3h3v9' },
-  transport: { label: 'Transport', bg: '#EFE6D8', fg: '#5E4A30', icon: 'M5 16h14M6 16l1.5-5h9L18 16M5 16v3M19 16v3M8 13.5h.01M16 13.5h.01' },
-  boat: { label: 'Boat', bg: '#DCEEEC', fg: '#1D5E5A', icon: 'M3 18c2 2 4 2 6 0s4-2 6 0 4 2 6 0M5 15l1-5h12l1 5M12 10V5' }
+  flight: { get label() { return t('Flight'); }, bg: '#E6ECF4', fg: '#2C5282', icon: 'M3 13l18-7-7 18-2-8-9-3z' },
+  hotel: { get label() { return t('Stay'); }, bg: '#F4E2EA', fg: '#7A3566', icon: 'M3 19V6M3 14h18v5M21 14v-2a3 3 0 0 0-3-3h-7v5M7 12a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z' },
+  activity: { get label() { return t('Activity'); }, bg: '#E2EFDC', fg: '#3A6528', icon: 'M12 3l2.6 5.6 6 .7-4.5 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6L3.4 9.3l6-.7z' },
+  food: { get label() { return t('Food'); }, bg: '#FBE4CF', fg: '#9A4A0E', icon: 'M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 1-3 3-3 6v3h3v9' },
+  transport: { get label() { return t('Transport'); }, bg: '#EFE6D8', fg: '#5E4A30', icon: 'M5 16h14M6 16l1.5-5h9L18 16M5 16v3M19 16v3M8 13.5h.01M16 13.5h.01' },
+  boat: { get label() { return t('Boat'); }, bg: '#DCEEEC', fg: '#1D5E5A', icon: 'M3 18c2 2 4 2 6 0s4-2 6 0 4 2 6 0M5 15l1-5h12l1 5M12 10V5' }
 };
 export const TYPE_ORDER = ['activity', 'food', 'transport', 'boat', 'flight', 'hotel'];
 
 export const REMINDER_CATS = {
-  cancel: { label: 'Cancel', bg: '#FBE7E4', fg: '#8F1D14' },
-  pay: { label: 'Pay', bg: '#F9E9D8', fg: '#8A420C' },
-  checkin: { label: 'Check in', bg: '#E6ECF4', fg: '#2C5282' },
-  confirm: { label: 'Confirm', bg: '#E2EFDC', fg: '#3A6528' },
-  other: { label: 'Other', bg: '#EFEAE2', fg: '#4A3D33' }
+  cancel: { get label() { return t('Cancel'); }, bg: '#FBE7E4', fg: '#8F1D14' },
+  pay: { get label() { return t('Pay'); }, bg: '#F9E9D8', fg: '#8A420C' },
+  checkin: { get label() { return t('Check in'); }, bg: '#E6ECF4', fg: '#2C5282' },
+  confirm: { get label() { return t('Confirm'); }, bg: '#E2EFDC', fg: '#3A6528' },
+  other: { get label() { return t('Other'); }, bg: '#EFEAE2', fg: '#4A3D33' }
 };
 
 // Expense categories. Colours validated as a categorical palette on the cream surface.
 export const EXP_CATS = {
-  stays: { label: 'Stays', color: '#2a78d6', type: 'hotel' },
-  flights: { label: 'Flights', color: '#eb6834', type: 'flight' },
-  activities: { label: 'Activities', color: '#1baf7a', type: 'activity' },
-  food: { label: 'Food', color: '#eda100', type: 'food' },
-  transport: { label: 'Transport', color: '#e87ba4', type: 'transport' },
-  other: { label: 'Other', color: '#008300', type: null }
+  stays: { get label() { return t('Stays'); }, color: '#2a78d6', type: 'hotel' },
+  flights: { get label() { return t('Flights'); }, color: '#eb6834', type: 'flight' },
+  activities: { get label() { return t('Activities'); }, color: '#1baf7a', type: 'activity' },
+  food: { get label() { return t('Food'); }, color: '#eda100', type: 'food' },
+  transport: { get label() { return t('Transport'); }, color: '#e87ba4', type: 'transport' },
+  other: { get label() { return t('Other'); }, color: '#008300', type: null }
 };
 export const TYPE_TO_CAT = { flight: 'flights', hotel: 'stays', activity: 'activities', food: 'food', transport: 'transport', boat: 'transport' };
 export const OTHER_LOOK = { bg: '#EFE7DD', fg: '#4A3D33', icon: 'M6 8h12l-1 12H7L6 8zM9 8V6a3 3 0 0 1 6 0v2' };
@@ -83,11 +85,26 @@ export const tripDays = (trip) => {
   for (let i = 0; i <= n && i < 120; i++) out.push(addDays(trip.startDate, i));
   return out;
 };
-const WD = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-const MO = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-export const dShort = (d) => { const x = parseDate(d); return WD[x.getUTCDay()].slice(0, 3) + ' ' + x.getUTCDate() + ' ' + MO[x.getUTCMonth()].slice(0, 3); };
-export const dLong = (d) => { const x = parseDate(d); return WD[x.getUTCDay()] + ' ' + x.getUTCDate() + ' ' + MO[x.getUTCMonth()]; };
-export const dWeekday = (d) => WD[parseDate(d).getUTCDay()].slice(0, 3);
+const NAMES = {
+  en: {
+    wd: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    wds: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    mo: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    mos: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  },
+  nl: {
+    wd: ['zondag', 'maandag', 'dinsdag', 'woensdag', 'donderdag', 'vrijdag', 'zaterdag'],
+    wds: ['zo', 'ma', 'di', 'wo', 'do', 'vr', 'za'],
+    mo: ['januari', 'februari', 'maart', 'april', 'mei', 'juni', 'juli', 'augustus', 'september', 'oktober', 'november', 'december'],
+    mos: ['jan', 'feb', 'mrt', 'apr', 'mei', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec']
+  }
+};
+const N = () => NAMES[getLang()] || NAMES.en;
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+export const dShort = (d) => { const x = parseDate(d); return N().wds[x.getUTCDay()] + ' ' + x.getUTCDate() + ' ' + N().mos[x.getUTCMonth()]; };
+// Long form is used as a heading, so it starts with a capital in Dutch too.
+export const dLong = (d) => { const x = parseDate(d); return cap(N().wd[x.getUTCDay()]) + ' ' + x.getUTCDate() + ' ' + N().mo[x.getUTCMonth()]; };
+export const dWeekday = (d) => N().wds[parseDate(d).getUTCDay()];
 export const dNum = (d) => String(parseDate(d).getUTCDate());
 
 // "Now" in the trip's time zone, as { date, min, label }.
@@ -103,7 +120,7 @@ export const nowIn = (tz) => {
 const SYMBOLS = { EUR: '€', THB: '฿', GBP: '£', USD: '$', JPY: '¥', AUD: 'A$', SGD: 'S$', IDR: 'Rp ', MYR: 'RM ', PHP: '₱', KRW: '₩' };
 const SUFFIX = { VND: ' ₫', KHR: ' ៛', LAK: ' ₭' };
 export const money = (n, cur) => {
-  const num = Math.round(n || 0).toLocaleString('en-GB');
+  const num = Math.round(n || 0).toLocaleString(getLang() === 'nl' ? 'nl-NL' : 'en-GB');
   if (SUFFIX[cur]) return num + SUFFIX[cur];
   return (SYMBOLS[cur] || (cur ? cur + ' ' : '')) + num;
 };
@@ -144,7 +161,7 @@ export const mapsUrl = (q) => 'https://www.google.com/maps/dir/?api=1&destinatio
 
 export const nameOf = (trip, email) => {
   if (!email) return '';
-  if (email === 'both' || email === 'shared') return email === 'both' ? 'Both' : 'Shared';
+  if (email === 'both' || email === 'shared') return email === 'both' ? t('Both') : t('Shared');
   return (trip.names && trip.names[email]) || email.split('@')[0];
 };
 

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Icon, Fab } from '../components/ui.jsx';
+import { t } from '../lib/i18n.js';
 import { TYPES, dWeekday, dNum, dShort, dLong, tm, fromMin } from '../lib/util.js';
 import { dayItems, bandText, staysFor, timeLabel } from '../lib/trip.js';
 
@@ -66,17 +67,17 @@ export default function Itinerary({ ctx }) {
     <main className="screen flat" style={{ display: 'flex', flexDirection: 'column' }}>
       <div className="it-head">
         <div className="between">
-          <h1 className="h1" style={{ fontSize: 28 }}>Itinerary</h1>
-          <span className="small muted">Times in local time</span>
+          <h1 className="h1" style={{ fontSize: 28 }}>{t('Itinerary')}</h1>
+          <span className="small muted">{t('Times in local time')}</span>
         </div>
-        <div className="pills" role="tablist" aria-label="Days">
+        <div className="pills" role="tablist" aria-label={t('Days')}>
           {days.map((d, i) => {
             const seen = [];
             dayItems(items, d).forEach((it) => { const c = (TYPES[it.type] || TYPES.activity).fg; if (seen.indexOf(c) < 0 && seen.length < 3) seen.push(c); });
             const on = i === dayIdx;
             return (
               <button key={d} role="tab" aria-selected={on} className={'dpill' + (on ? ' on' : '') + (d === now.date ? ' today' : '')}
-                aria-label={'Day ' + (i + 1) + ', ' + dLong(d) + (d === now.date ? ', today' : '')} onClick={() => go(i)}>
+                aria-label={t('Day {n}', { n: i + 1 }) + ', ' + dLong(d) + (d === now.date ? ', ' + t('today') : '')} onClick={() => go(i)}>
                 <span className="wd">{dWeekday(d)}</span>
                 <span className="dn">{dNum(d)}</span>
                 <span className="dots">{seen.map((c) => <span key={c} style={{ background: on ? '#FFFBF5' : c }} />)}</span>
@@ -87,12 +88,12 @@ export default function Itinerary({ ctx }) {
       </div>
 
       <div className="row" style={{ padding: '2px 10px 8px', gap: 8 }}>
-        <button className="iconbtn clear" aria-label="Previous day" disabled={dayIdx === 0} onClick={() => go(dayIdx - 1)}><Icon d="chevL" size={22} stroke={2} /></button>
+        <button className="iconbtn clear" aria-label={t('Previous day')} disabled={dayIdx === 0} onClick={() => go(dayIdx - 1)}><Icon d="chevL" size={22} stroke={2} /></button>
         <div className="stack grow" style={{ alignItems: 'center', gap: 1 }}>
-          <span style={{ fontSize: 17, fontWeight: 700 }}>Day {dayIdx + 1} · {dShort(date)}</span>
-          <span className="small muted">{list.length ? list.length + (list.length === 1 ? ' plan' : ' plans') : 'Nothing planned yet'}</span>
+          <span style={{ fontSize: 17, fontWeight: 700 }}>{t('Day {n}', { n: dayIdx + 1 })} · {dShort(date)}</span>
+          <span className="small muted">{list.length ? (list.length === 1 ? t('1 plan') : t('{n} plans', { n: list.length })) : t('Nothing planned yet')}</span>
         </div>
-        <button className="iconbtn clear" aria-label="Next day" disabled={dayIdx === days.length - 1} onClick={() => go(dayIdx + 1)}><Icon d="chevR" size={22} stroke={2} /></button>
+        <button className="iconbtn clear" aria-label={t('Next day')} disabled={dayIdx === days.length - 1} onClick={() => go(dayIdx + 1)}><Icon d="chevR" size={22} stroke={2} /></button>
       </div>
 
       <button className="band" style={{ border: 0, textAlign: 'left' }}
@@ -105,8 +106,8 @@ export default function Itinerary({ ctx }) {
       {allDay.length > 0 && (
         <div className="chips" style={{ padding: '0 16px 10px' }}>
           {allDay.map((it) => {
-            const t = TYPES[it.type] || TYPES.activity;
-            return <button key={it.id} className="chip" style={{ background: t.bg, color: t.fg, border: 0 }} onClick={() => open({ kind: 'item', id: it.id })}>All day · {it.title}</button>;
+            const ty = TYPES[it.type] || TYPES.activity;
+            return <button key={it.id} className="chip" style={{ background: ty.bg, color: ty.fg, border: 0 }} onClick={() => open({ kind: 'item', id: it.id })}>{t('All day')} · {it.title}</button>;
           })}
         </div>
       )}
@@ -133,16 +134,16 @@ export default function Itinerary({ ctx }) {
           ))}
           {hours.slice(0, -1).map((h) => (
             <button key={'s' + h} className="slot" style={{ top: (h - startHour) * H, height: H }}
-              aria-label={'Add something at ' + fromMin(h * 60)} onClick={guard(() => open({ kind: 'itemForm', date, start: fromMin(h * 60) }))} />
+              aria-label={t('Add something at {time}', { time: fromMin(h * 60) })} onClick={guard(() => open({ kind: 'itemForm', date, start: fromMin(h * 60) }))} />
           ))}
           {placed.map(({ it, st, en, lane, lanes }) => {
-            const t = TYPES[it.type] || TYPES.activity;
+            const ty = TYPES[it.type] || TYPES.activity;
             const h = Math.max((en - st) / 60 * H - 3, 26);
             const w = 'calc((100% - 74px) / ' + lanes + ')';
             return (
               <button key={it.id} className="ev" onClick={guard(() => open({ kind: 'item', id: it.id }))}
-                style={{ top: top(st), height: h, background: t.bg, color: t.fg, left: 'calc(60px + ' + w + ' * ' + lane + ')', width: 'calc(' + w + ' - 4px)', right: 'auto' }}>
-                <Icon d={t.icon} size={16} stroke={2} style={{ flexShrink: 0, marginTop: 2 }} />
+                style={{ top: top(st), height: h, background: ty.bg, color: ty.fg, left: 'calc(60px + ' + w + ' * ' + lane + ')', width: 'calc(' + w + ' - 4px)', right: 'auto' }}>
+                <Icon d={ty.icon} size={16} stroke={2} style={{ flexShrink: 0, marginTop: 2 }} />
                 <span className="stack grow" style={{ gap: 1, minWidth: 0 }}>
                   <span className="t">{it.title}</span>
                   {h >= 44 && <span className="s">{timeLabel(it)}</span>}
@@ -155,7 +156,7 @@ export default function Itinerary({ ctx }) {
         </div>
       </div>
     </main>
-    <Fab label="Add to this day" onClick={() => open({ kind: 'itemForm', date })} />
+    <Fab label={t('Add to this day')} onClick={() => open({ kind: 'itemForm', date })} />
     </>
   );
 }

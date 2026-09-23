@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSub } from './lib/data.js';
 import { tripDays, nowIn, tm } from './lib/util.js';
 import { Icon } from './components/ui.jsx';
+import { t } from './lib/i18n.js';
 import Today from './screens/Today.jsx';
 import Itinerary from './screens/Itinerary.jsx';
 import Reminders from './screens/Reminders.jsx';
@@ -15,13 +16,14 @@ import { WishForm, PlanWish } from './sheets/WishSheets.jsx';
 import ExpenseForm from './sheets/ExpenseForm.jsx';
 import Settings from './sheets/Settings.jsx';
 
+// Tab labels are kept short so the Dutch versions fit under the icons.
 const TABS = [
-  { id: 'today', label: 'Today', icon: 'sun' },
-  { id: 'day', label: 'Itinerary', icon: 'calendar' },
-  { id: 'rem', label: 'Reminders', icon: 'bell' },
-  { id: 'wish', label: 'Wishlist', icon: 'heart' },
-  { id: 'pack', label: 'Packing', icon: 'bag' },
-  { id: 'money', label: 'Expenses', icon: 'wallet' }
+  { id: 'today', get label() { return t('Today'); }, icon: 'sun' },
+  { id: 'day', get label() { return t('Itinerary'); }, icon: 'calendar' },
+  { id: 'rem', get label() { return t('Reminders'); }, icon: 'bell' },
+  { id: 'wish', get label() { return t('Wishlist'); }, icon: 'heart' },
+  { id: 'pack', get label() { return t('Packing'); }, icon: 'bag' },
+  { id: 'money', get label() { return t('Expenses'); }, icon: 'wallet' }
 ];
 
 export default function TripApp({ user, trip, trips, onSwitch, onNewTrip }) {
@@ -51,7 +53,7 @@ export default function TripApp({ user, trip, trips, onSwitch, onNewTrip }) {
   const flash = useCallback((msg) => { setToast(msg); setTimeout(() => setToast(''), 1800); }, []);
   const close = useCallback(() => setSheet(null), []);
   useEffect(() => {
-    const onErr = (e) => flash('Couldn\u2019t save: ' + e.detail);
+    const onErr = (e) => flash(t('Couldn\u2019t save: {error}', { error: e.detail }));
     window.addEventListener('write-error', onErr);
     return () => window.removeEventListener('write-error', onErr);
   }, [flash]);
@@ -77,16 +79,16 @@ export default function TripApp({ user, trip, trips, onSwitch, onNewTrip }) {
       {tab === 'pack' && <Packing ctx={ctx} />}
       {tab === 'money' && <Expenses ctx={ctx} />}
 
-      <nav className="tabbar" aria-label="Main">
-        {TABS.map((t) => (
-          <button key={t.id} className={tab === t.id ? 'on' : ''} aria-current={tab === t.id ? 'page' : undefined}
-            aria-label={t.id === 'rem' && attention ? t.label + ', ' + attention + ' need attention' : t.label}
-            onClick={() => { setSheet(null); setTab(t.id); }}>
+      <nav className="tabbar" aria-label={t('Main')}>
+        {TABS.map((tb) => (
+          <button key={tb.id} className={tab === tb.id ? 'on' : ''} aria-current={tab === tb.id ? 'page' : undefined}
+            aria-label={tb.id === 'rem' && attention ? tb.label + ', ' + (attention === 1 ? t('1 needs attention') : t('{n} need attention', { n: attention })) : tb.label}
+            onClick={() => { setSheet(null); setTab(tb.id); }}>
             <span style={{ position: 'relative', display: 'flex' }}>
-              <Icon d={t.icon} size={22} />
-              {t.id === 'rem' && attention > 0 && <span className="badge">{attention}</span>}
+              <Icon d={tb.icon} size={22} />
+              {tb.id === 'rem' && attention > 0 && <span className="badge">{attention}</span>}
             </span>
-            <span className="lbl">{t.label}</span>
+            <span className="lbl">{tb.label}</span>
           </button>
         ))}
       </nav>

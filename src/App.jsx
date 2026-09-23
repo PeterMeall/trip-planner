@@ -4,6 +4,7 @@ import { useAuthUser, useTrips } from './lib/data.js';
 import Login from './screens/Login.jsx';
 import TripSetup from './screens/TripSetup.jsx';
 import TripApp from './TripApp.jsx';
+import { t, useLang } from './lib/i18n.js';
 
 const store = {
   get: (k) => { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
@@ -12,16 +13,17 @@ const store = {
 
 export default function App() {
   const { loading, user } = useAuthUser();
+  useLang(); // re-render everything when the language changes
 
   if (!isConfigured && !new URLSearchParams(window.location.search).has('emulator')) {
     return (
       <div className="auth">
-        <h1 className="h1">Almost there</h1>
+        <h1 className="h1">{t('Almost there')}</h1>
         <p className="sub">This app isn't connected to Firebase yet. Paste your Firebase config into <b>src/firebase-config.js</b> (step 3 in the setup guide) and push the change.</p>
       </div>
     );
   }
-  if (loading) return <div className="auth"><p className="sub">Loading…</p></div>;
+  if (loading) return <div className="auth"><p className="sub">{t('Loading…')}</p></div>;
   if (!user) return <Login />;
   return <Trips user={user} />;
 }
@@ -41,13 +43,13 @@ function Trips({ user }) {
   const [selected, setSelected] = useState(() => store.get('tripId'));
   const [creating, setCreating] = useState(false);
 
-  if (loading) return <div className="auth"><p className="sub">Loading your trips…</p></div>;
+  if (loading) return <div className="auth"><p className="sub">{t('Loading your trips…')}</p></div>;
   if (error) {
     return (
       <div className="auth">
-        <h1 className="h1">Couldn't load trips</h1>
+        <h1 className="h1">{t('Couldn\u2019t load trips')}</h1>
         <p className="error">{error.message}</p>
-        <p className="sub">Check that the Firestore security rules from the setup guide have been published.</p>
+        <p className="sub">{t('Check that the Firestore security rules from the setup guide have been published.')}</p>
       </div>
     );
   }

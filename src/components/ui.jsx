@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ICONS, TYPES } from '../lib/util.js';
+import { t } from '../lib/i18n.js';
 
 export function Icon({ d, size = 20, stroke = 1.8, fill = 'none', color = 'currentColor', style }) {
   return (
@@ -28,7 +29,7 @@ export function Sheet({ onClose, children, full, label }) {
   }, [onClose]);
   return (
     <>
-      {!full && <button className="backdrop" aria-label="Close" onClick={onClose} />}
+      {!full && <button className="backdrop" aria-label={t('Close')} onClick={onClose} />}
       <div className={'sheet' + (full ? ' full' : '')} role="dialog" aria-modal="true" aria-label={label}>
         {!full && <span className="grabber" />}
         {children}
@@ -44,7 +45,7 @@ export function SheetHead({ title, sub, onClose }) {
         <span className="sheet-title">{title}</span>
         {sub && <span className="small muted">{sub}</span>}
       </div>
-      <button className="iconbtn" aria-label="Close" onClick={onClose}><Icon d="close" size={18} stroke={2} /></button>
+      <button className="iconbtn" aria-label={t('Close')} onClick={onClose}><Icon d="close" size={18} stroke={2} /></button>
     </div>
   );
 }
@@ -84,7 +85,7 @@ export function Seg({ options, value, onChange, label }) {
 
 export function TypePicker({ types, value, onChange }) {
   return (
-    <div className="typegrid" role="group" aria-label="Type">
+    <div className="typegrid" role="group" aria-label={t('Type')}>
       {types.map((k) => {
         const t = TYPES[k];
         const on = value === k;
@@ -115,11 +116,11 @@ export function TimeSelect({ id, value, onChange }) {
 const TIMESLIST = (() => { const o = []; for (let m = 0; m < 1440; m += 15) o.push(String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0')); return o; })();
 
 // Two-tap delete, so nothing is removed by accident (and no browser pop-ups).
-export function ConfirmButton({ onConfirm, children = 'Delete', confirmText = 'Tap again to delete' }) {
+export function ConfirmButton({ onConfirm, children, confirmText }) {
   const [armed, setArmed] = useState(false);
   useEffect(() => { if (!armed) return undefined; const t = setTimeout(() => setArmed(false), 3000); return () => clearTimeout(t); }, [armed]);
   return (
     <button type="button" className="btn danger" style={armed ? { background: 'var(--danger)', color: '#FFFBF5', borderColor: 'var(--danger)' } : undefined}
-      onClick={() => (armed ? onConfirm() : setArmed(true))}>{armed ? confirmText : children}</button>
+      onClick={() => (armed ? onConfirm() : setArmed(true))}>{armed ? (confirmText || t('Tap again to delete')) : (children || t('Delete'))}</button>
   );
 }

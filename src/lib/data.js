@@ -4,6 +4,7 @@ import {
   collection, doc, onSnapshot, query, where, updateDoc, deleteDoc, setDoc, getDoc, getDocFromCache, serverTimestamp, writeBatch
 } from 'firebase/firestore';
 import { auth, db } from './firebase.js';
+import { t } from './i18n.js';
 
 export function useAuthUser() {
   const [state, setState] = useState({ loading: true, user: null });
@@ -111,11 +112,11 @@ export const removeAttachment = (tripId, id) => {
 // Shrinks photos to a sensible size so they fit comfortably in a Firestore document (max 1 MB).
 export const fileToDataUrl = (file) => new Promise((resolve, reject) => {
   const reader = new FileReader();
-  reader.onerror = () => reject(new Error('Could not read the file'));
+  reader.onerror = () => reject(new Error(t('Could not read the file')));
   reader.onload = () => {
     const url = reader.result;
     if (!file.type.startsWith('image/')) {
-      if (url.length > 950000) reject(new Error('That file is too big. PDFs need to be under about 700 KB.'));
+      if (url.length > 950000) reject(new Error(t('That file is too big. PDFs need to be under about 700 KB.')));
       else resolve(url);
       return;
     }
@@ -132,7 +133,7 @@ export const fileToDataUrl = (file) => new Promise((resolve, reject) => {
       while (out.length > 900000 && q > 0.3) { q -= 0.15; out = c.toDataURL('image/jpeg', q); }
       resolve(out);
     };
-    img.onerror = () => reject(new Error('Could not read that image'));
+    img.onerror = () => reject(new Error(t('Could not read that image')));
     img.src = url;
   };
   reader.readAsDataURL(file);

@@ -1,4 +1,5 @@
 import { Icon, TypeBubble } from '../components/ui.jsx';
+import { t } from '../lib/i18n.js';
 import { dLong, daysBetween, mapsUrl, tm, TYPES } from '../lib/util.js';
 import { dayItems, staysFor, timeLabel } from '../lib/trip.js';
 
@@ -19,11 +20,11 @@ export default function Today({ ctx }) {
   const night = staysFor(items, showDate).night;
 
   const diff = next && idx >= 0 ? tm(next.start) - now.min : 0;
-  const countdown = diff > 0 ? 'in ' + (Math.floor(diff / 60) ? Math.floor(diff / 60) + ' h ' : '') + (diff % 60 ? (diff % 60) + ' min' : '') : '';
+  const countdown = diff > 0 ? t('in {time}', { time: ((Math.floor(diff / 60) ? Math.floor(diff / 60) + ' ' + t('h') + ' ' : '') + (diff % 60 ? (diff % 60) + ' min' : '')).trim() }) : '';
 
   const alertParts = [];
-  if (remOverdue) alertParts.push(remOverdue + ' overdue');
-  if (remToday) alertParts.push(remToday + ' due today');
+  if (remOverdue) alertParts.push(t('{n} overdue', { n: remOverdue }));
+  if (remToday) alertParts.push(t('{n} due today', { n: remToday }));
 
   const toGo = before ? daysBetween(now.date, days[0]) : 0;
 
@@ -32,19 +33,19 @@ export default function Today({ ctx }) {
       <div className="row" style={{ alignItems: 'flex-start' }}>
         <div className="stack grow">
           <span className="eyebrow">
-            {trip.name}{idx >= 0 ? ' · Day ' + (idx + 1) + ' of ' + days.length : before ? ' · ' + toGo + (toGo === 1 ? ' day' : ' days') + ' to go' : ' · trip complete'}
+            {trip.name}{idx >= 0 ? ' · ' + t('Day {n} of {total}', { n: idx + 1, total: days.length }) : before ? ' · ' + (toGo === 1 ? t('1 day to go') : t('{n} days to go', { n: toGo })) : ' · ' + t('trip complete')}
           </span>
-          <h1 className="h1 big">{before ? 'Day 1: ' + dLong(days[0]) : dLong(showDate)}</h1>
-          {idx >= 0 && <span className="sub">{now.label} local time</span>}
-          {before && <span className="sub">Here's what's planned for your first day.</span>}
+          <h1 className="h1 big">{before ? t('Day 1: {date}', { date: dLong(days[0]) }) : dLong(showDate)}</h1>
+          {idx >= 0 && <span className="sub">{t('{time} local time', { time: now.label })}</span>}
+          {before && <span className="sub">{t('Here\u2019s what\u2019s planned for your first day.')}</span>}
         </div>
-        <button className="iconbtn clear" aria-label="Settings" onClick={() => open({ kind: 'settings' })}><Icon d="gear" size={22} /></button>
+        <button className="iconbtn clear" aria-label={t('Settings')} onClick={() => open({ kind: 'settings' })}><Icon d="gear" size={22} /></button>
       </div>
 
       {alertParts.length > 0 && (
         <button className="alert" onClick={() => setTab('rem')}>
           <Icon d="bell" size={20} stroke={1.9} />
-          <span className="grow">Reminders: {alertParts.join(', ')}</span>
+          <span className="grow">{t('Reminders: {list}', { list: alertParts.join(', ') })}</span>
           <Icon d="chevR" size={18} stroke={2} />
         </button>
       )}
@@ -53,17 +54,17 @@ export default function Today({ ctx }) {
         <button className="now-strip" onClick={() => open({ kind: 'item', id: current.id })}>
           <span className="dot" />
           <span className="stack grow" style={{ gap: 2 }}>
-            <span className="tag" style={{ padding: 0, color: '#B45A12' }}>Happening now</span>
+            <span className="tag" style={{ padding: 0, color: '#B45A12' }}>{t('Happening now')}</span>
             <span className="row-title">{current.title}</span>
           </span>
-          <span className="small muted">until {current.end || current.start}</span>
+          <span className="small muted">{t('until {time}', { time: current.end || current.start })}</span>
         </button>
       )}
 
       {next ? (
         <div className="next">
           <div className="between" style={{ alignItems: 'center' }}>
-            <span className="eyebrow soft" style={{ color: 'var(--primary-soft)' }}>{idx >= 0 ? 'Next up' : 'First up'}</span>
+            <span className="eyebrow soft" style={{ color: 'var(--primary-soft)' }}>{idx >= 0 ? t('Next up') : t('First up')}</span>
             {countdown && <span className="count">{countdown}</span>}
           </div>
           <div className="row" style={{ alignItems: 'flex-start', gap: 14 }}>
@@ -77,21 +78,21 @@ export default function Today({ ctx }) {
           </div>
           <div className="row">
             <a className="btn light" href={mapsUrl(next.q || next.place || next.title)} target="_blank" rel="noopener noreferrer">
-              <Icon d="pin" size={18} stroke={2} />Directions
+              <Icon d="pin" size={18} stroke={2} />{t('Directions')}
             </a>
-            <button className="btn ghost" onClick={() => open({ kind: 'item', id: next.id })}>Details</button>
+            <button className="btn ghost" onClick={() => open({ kind: 'item', id: next.id })}>{t('Details')}</button>
           </div>
         </div>
       ) : (
         <div className="empty">
-          {after ? 'That’s a wrap. Have a look at Expenses for the final totals.' : 'Nothing else planned for today.'}
-          {!after && <div style={{ marginTop: 12 }}><button className="btn sm outline" onClick={() => open({ kind: 'itemForm', date: showDate })}>Add something</button></div>}
+          {after ? t('That’s a wrap. Have a look at Expenses for the final totals.') : t('Nothing else planned for today.')}
+          {!after && <div style={{ marginTop: 12 }}><button className="btn sm outline" onClick={() => open({ kind: 'itemForm', date: showDate })}>{t('Add something')}</button></div>}
         </div>
       )}
 
       {later.length > 0 && (
         <section className="section">
-          <h2 className="eyebrow">Later today</h2>
+          <h2 className="eyebrow">{t('Later today')}</h2>
           <div className="card list">
             {later.map((it) => (
               <button key={it.id} className="row-btn" onClick={() => open({ kind: 'item', id: it.id })}>
@@ -106,7 +107,7 @@ export default function Today({ ctx }) {
       )}
 
       <section className="section">
-        <h2 className="eyebrow">Tonight</h2>
+        <h2 className="eyebrow">{t('Tonight')}</h2>
         {night ? (
           <div className="card row" style={{ padding: '12px 12px 12px 14px', gap: 12 }}>
             <button className="row grow" style={{ border: 0, background: 'none', padding: 0, textAlign: 'left', gap: 12 }} onClick={() => open({ kind: 'item', id: night.id })}>
@@ -117,11 +118,11 @@ export default function Today({ ctx }) {
               </span>
             </button>
             <a className="iconbtn" style={{ background: '#F4E2EA', color: '#7A3566' }} href={mapsUrl(night.q || night.place || night.title)}
-              target="_blank" rel="noopener noreferrer" aria-label="Directions to tonight's stay"><Icon d="pin" size={20} stroke={2} /></a>
+              target="_blank" rel="noopener noreferrer" aria-label={t('Directions to tonight\u2019s stay')}><Icon d="pin" size={20} stroke={2} /></a>
           </div>
         ) : (
           <button className="empty" style={{ textAlign: 'left', background: 'none' }} onClick={() => open({ kind: 'itemForm', date: showDate, type: 'hotel' })}>
-            No stay added for tonight. Tap to add one.
+            {t('No stay added for tonight. Tap to add one.')}
           </button>
         )}
       </section>

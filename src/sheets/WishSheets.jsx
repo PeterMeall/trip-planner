@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Sheet, SheetHead, Field, TypePicker, TimeSelect, ConfirmButton } from '../components/ui.jsx';
+import { t } from '../lib/i18n.js';
 import { parseAmount, tm, fromMin, currenciesOf } from '../lib/util.js';
 import { addRow, updateRow, deleteRow } from '../lib/data.js';
 import { dayLabel } from '../lib/trip.js';
@@ -18,33 +19,33 @@ export function WishForm({ ctx, wish }) {
     const data = { title: f.title.trim(), type: f.type, area: f.area.trim(), est, estCur: f.estCur, note: f.note.trim() };
     if (editing) updateRow(trip.id, 'wishlist', wish.id, data);
     else addRow(trip.id, 'wishlist', { ...data, keen: [me] });
-    flash(editing ? 'Saved' : 'Added to the wishlist');
+    flash(editing ? t('Saved') : t('Added to the wishlist'));
     close();
   };
 
   return (
-    <Sheet onClose={close} label="Wishlist idea">
+    <Sheet onClose={close} label={t('Wishlist idea')}>
       <form className="stack" style={{ gap: 14 }} onSubmit={save}>
-        <SheetHead title={editing ? 'Edit idea' : 'New idea'} onClose={close} />
-        <Field label="What" id="w-title"><input id="w-title" className="input" value={f.title} onChange={(e) => set('title', e.target.value)} placeholder="e.g. Sunrise at Wat Arun" required /></Field>
+        <SheetHead title={editing ? t('Edit idea') : t('New idea')} onClose={close} />
+        <Field label={t('What')} id="w-title"><input id="w-title" className="input" value={f.title} onChange={(e) => set('title', e.target.value)} placeholder={t('e.g. Sunrise at Wat Arun')} required /></Field>
         <TypePicker types={['activity', 'food', 'boat', 'transport', 'hotel', 'flight']} value={f.type} onChange={(v) => set('type', v)} />
         <div className="grid2">
-          <Field label="Where" id="w-area">
-            <input id="w-area" className="input" list="w-areas" value={f.area} onChange={(e) => set('area', e.target.value)} placeholder="e.g. Bangkok" />
+          <Field label={t('Where')} id="w-area">
+            <input id="w-area" className="input" list="w-areas" value={f.area} onChange={(e) => set('area', e.target.value)} placeholder={t('e.g. Bangkok')} />
             <datalist id="w-areas">{areas.map((a) => <option key={a} value={a} />)}</datalist>
           </Field>
           <div className="field">
-            <label htmlFor="w-est">Rough cost</label>
+            <label htmlFor="w-est">{t('Rough cost')}</label>
             <div className="row" style={{ gap: 6 }}>
-              <input id="w-est" className="input grow" inputMode="decimal" value={f.est} onChange={(e) => set('est', e.target.value)} placeholder="Optional" />
-              <select aria-label="Currency" className="input" style={{ width: 84, flexShrink: 0 }} value={f.estCur} onChange={(e) => set('estCur', e.target.value)}>
+              <input id="w-est" className="input grow" inputMode="decimal" value={f.est} onChange={(e) => set('est', e.target.value)} placeholder={t('Optional')} />
+              <select aria-label={t('Currency')} className="input" style={{ width: 84, flexShrink: 0 }} value={f.estCur} onChange={(e) => set('estCur', e.target.value)}>
                 {currenciesOf(trip).map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
           </div>
         </div>
-        <Field label="Note" id="w-note"><textarea id="w-note" className="input" value={f.note} onChange={(e) => set('note', e.target.value)} placeholder="Why it's worth it, opening times…" /></Field>
-        <button className="btn primary" disabled={!f.title.trim()}>{editing ? 'Save changes' : 'Save to wishlist'}</button>
+        <Field label={t('Note')} id="w-note"><textarea id="w-note" className="input" value={f.note} onChange={(e) => set('note', e.target.value)} placeholder={t('Why it\'s worth it, opening times…')} /></Field>
+        <button className="btn primary" disabled={!f.title.trim()}>{editing ? t('Save changes') : t('Save to wishlist')}</button>
         {editing && <ConfirmButton onConfirm={() => { deleteRow(trip.id, 'wishlist', wish.id); close(); }} />}
       </form>
     </Sheet>
@@ -67,24 +68,24 @@ export function PlanWish({ ctx, wish }) {
     });
     updateRow(trip.id, 'wishlist', wish.id, { itemId });
     setDayIdx(days.indexOf(f.date));
-    flash('On the itinerary');
+    flash(t('On the itinerary'));
     close();
   };
 
   return (
-    <Sheet onClose={close} label="Add to a day">
+    <Sheet onClose={close} label={t('Add to a day')}>
       <form className="stack" style={{ gap: 16 }} onSubmit={save}>
-        <SheetHead title={wish.title} sub="Add to the itinerary" onClose={close} />
-        <Field label="Which day" id="p-day">
+        <SheetHead title={wish.title} sub={t('Add to the itinerary')} onClose={close} />
+        <Field label={t('Which day')} id="p-day">
           <select id="p-day" className="input" value={f.date} onChange={(e) => set('date', e.target.value)}>
             {days.map((d) => <option key={d} value={d}>{dayLabel(days, d)}</option>)}
           </select>
         </Field>
         <div className="grid2">
-          <Field label="From" id="p-s"><TimeSelect id="p-s" value={f.start} onChange={(v) => set('start', v)} /></Field>
-          <Field label="To" id="p-e"><TimeSelect id="p-e" value={f.end} onChange={(v) => set('end', v)} /></Field>
+          <Field label={t('From')} id="p-s"><TimeSelect id="p-s" value={f.start} onChange={(v) => set('start', v)} /></Field>
+          <Field label={t('To')} id="p-e"><TimeSelect id="p-e" value={f.end} onChange={(v) => set('end', v)} /></Field>
         </div>
-        <button className="btn primary">Add to {dayLabel(days, f.date).split(' · ')[0]}</button>
+        <button className="btn primary">{t('Add to {day}', { day: dayLabel(days, f.date).split(' · ')[0] })}</button>
       </form>
     </Sheet>
   );
