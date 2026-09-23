@@ -17,7 +17,7 @@ const fold = (line) => {
 
 export function buildIcs(trip, items) {
   const tz = trip.timezone || 'Asia/Bangkok';
-  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Trip Planner//EN', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:' + esc(trip.name), 'X-WR-TIMEZONE:' + tz];
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Chiabel Travels//EN', 'CALSCALE:GREGORIAN', 'X-WR-CALNAME:' + esc(trip.name), 'X-WR-TIMEZONE:' + tz];
   items.forEach((it) => {
     lines.push('BEGIN:VEVENT', 'UID:' + it.id + '@trip-planner', 'DTSTAMP:' + stamp());
     if (it.type === 'hotel') {

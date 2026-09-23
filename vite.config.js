@@ -12,11 +12,11 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg'],
+      includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Trip Planner',
-        short_name: 'Trips',
-        description: 'Day-by-day trip planner for two',
+        name: 'Chiabel Travels',
+        short_name: 'Chiabel Travels',
+        description: 'Our trips, day by day',
         theme_color: '#A0441F',
         background_color: '#F8ECDD',
         display: 'standalone',
@@ -26,7 +26,7 @@ export default defineConfig({
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
-          { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+          { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
         ]
       },
       workbox: {

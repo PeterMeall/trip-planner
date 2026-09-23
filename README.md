@@ -1,4 +1,4 @@
-# Trip Planner
+# Chiabel Travels
 
 A day-by-day trip planner for two, built as an installable web app (PWA) for Android and iPhone.
 

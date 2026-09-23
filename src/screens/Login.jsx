@@ -35,7 +35,7 @@ export default function Login() {
   return (
     <form className="auth" onSubmit={submit}>
       <div className="stack" style={{ gap: 8 }}>
-        <span className="eyebrow">Trip planner</span>
+        <span className="eyebrow">Chiabel Travels</span>
         <h1 className="h1 big">Welcome back</h1>
         <p className="sub">Sign in to see your trip. Everything you add syncs to both your phones.</p>
       </div>
