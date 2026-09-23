@@ -1,0 +1,28 @@
+rules_version = '2';
+
+// Only people whose email is in a trip's "members" list can see or change that trip.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+    function me() {
+      return request.auth.token.email.lower();
+    }
+    function isMember(tripId) {
+      return signedIn() && me() in get(/databases/$(database)/documents/trips/$(tripId)).data.members;
+    }
+
+    match /trips/{tripId} {
+      allow read: if signedIn() && me() in resource.data.members;
+      allow create: if signedIn() && me() in request.resource.data.members;
+      allow update: if signedIn() && me() in resource.data.members && me() in request.resource.data.members;
+      allow delete: if signedIn() && me() in resource.data.members;
+
+      match /{collectionName}/{docId} {
+        allow read, write: if isMember(tripId);
+      }
+    }
+  }
+}
