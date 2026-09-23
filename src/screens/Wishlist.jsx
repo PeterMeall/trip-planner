@@ -28,7 +28,7 @@ export default function Wishlist({ ctx }) {
         {!wishes.length && <div className="empty">Collect places you might want to go. When you decide, tap "Add to a day" and it lands on the itinerary.</div>}
         {shown.map((w) => {
           const item = w.itemId ? items.find((it) => it.id === w.itemId) : null;
-          const cost = w.est === 0 ? 'free' : w.est ? 'about ' + money(w.est, trip.localCurrency) : '';
+          const cost = w.est === 0 ? 'free' : w.est ? 'about ' + money(w.est, w.estCur || trip.localCurrency) : '';
           const keen = Array.isArray(w.keen) ? w.keen : [];
           return (
             <div key={w.id} className="card" style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10, borderRadius: 18 }}>

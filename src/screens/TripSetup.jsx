@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { createTrip, updateTrip } from '../lib/data.js';
-import { Field } from '../components/ui.jsx';
+import { Field, Icon } from '../components/ui.jsx';
 
 export const TIMEZONES = [
-  ['Asia/Bangkok', 'Thailand (Bangkok)'], ['Europe/Amsterdam', 'Netherlands'], ['Europe/London', 'United Kingdom'],
+  ['Asia/Bangkok', 'Thailand / Vietnam (UTC+7)'], ['Europe/Amsterdam', 'Netherlands'], ['Europe/London', 'United Kingdom'],
   ['Asia/Singapore', 'Singapore / Malaysia'], ['Asia/Ho_Chi_Minh', 'Vietnam'], ['Asia/Makassar', 'Bali'],
   ['Asia/Tokyo', 'Japan'], ['Australia/Sydney', 'Sydney'], ['America/New_York', 'New York'], ['America/Los_Angeles', 'Los Angeles']
 ];
-export const CURRENCIES = ['THB', 'EUR', 'GBP', 'USD', 'IDR', 'VND', 'JPY', 'SGD', 'AUD'];
+export const CURRENCIES = ['THB', 'VND', 'EUR', 'GBP', 'USD', 'KHR', 'LAK', 'MYR', 'IDR', 'SGD', 'PHP', 'JPY', 'KRW', 'AUD'];
 
 // Used both to create a trip and (with `trip`) to edit its settings.
 export function TripForm({ user, trip, onSaved, onCancel, submitLabel }) {
@@ -23,7 +23,8 @@ export function TripForm({ user, trip, onSaved, onCancel, submitLabel }) {
     rate: trip ? String(trip.rate) : '38',
     myName: trip ? (trip.names || {})[me] || '' : '',
     partnerEmail: other,
-    partnerName: trip ? (trip.names || {})[other] || '' : ''
+    partnerName: trip ? (trip.names || {})[other] || '' : '',
+    extras: trip && trip.extraCurrencies ? trip.extraCurrencies.map((c) => ({ code: c.code, rate: String(c.rate) })) : []
   }));
   const [error, setError] = useState('');
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
@@ -36,7 +37,12 @@ export function TripForm({ user, trip, onSaved, onCancel, submitLabel }) {
     const members = [me].concat(partner && partner !== me ? [partner] : []);
     const names = { [me]: f.myName.trim() || me.split('@')[0] };
     if (partner) names[partner] = f.partnerName.trim() || partner.split('@')[0];
+    const extraCurrencies = f.extras
+      .map((c) => ({ code: c.code, rate: Number(String(c.rate).replace(/[\s,]/g, '')) || 0 }))
+      .filter((c, i, arr) => c.rate > 0 && c.code !== f.localCurrency && c.code !== f.homeCurrency && arr.findIndex((x) => x.code === c.code) === i);
+    if (f.extras.some((c) => !(Number(String(c.rate).replace(/[\s,]/g, '')) > 0))) { setError('Add a rate for each extra currency, or remove it.'); return; }
     const data = {
+      extraCurrencies,
       name: f.name.trim() || 'Trip', startDate: f.startDate, endDate: f.endDate, timezone: f.timezone,
       localCurrency: f.localCurrency, homeCurrency: f.homeCurrency, rate: Number(String(f.rate).replace(',', '.')) || 1,
       members, names
@@ -65,6 +71,26 @@ export function TripForm({ user, trip, onSaved, onCancel, submitLabel }) {
           <select id="t-hc" className="input" value={f.homeCurrency} onChange={set('homeCurrency')}>{CURRENCIES.map((c) => <option key={c}>{c}</option>)}</select>
         </Field>
         <Field label={'1 ' + f.homeCurrency + ' ='} id="t-rate"><input id="t-rate" className="input" inputMode="decimal" value={f.rate} onChange={set('rate')} /></Field>
+      </div>
+      <div className="stack" style={{ gap: 8 }}>
+        <span className="label">Other currencies on this trip (e.g. VND for a few days in Vietnam)</span>
+        {f.extras.map((c, i) => (
+          <div key={i} className="row" style={{ gap: 8 }}>
+            <select aria-label="Currency" className="input" style={{ width: 96, flexShrink: 0 }} value={c.code}
+              onChange={(e) => setF({ ...f, extras: f.extras.map((x, j) => (j === i ? { ...x, code: e.target.value } : x)) })}>
+              {CURRENCIES.filter((k) => k !== f.homeCurrency && k !== f.localCurrency).map((k) => <option key={k}>{k}</option>)}
+            </select>
+            <span className="small muted" style={{ flexShrink: 0 }}>1 {f.homeCurrency} =</span>
+            <input aria-label={'Rate for ' + c.code} className="input grow" inputMode="decimal" value={c.rate} placeholder="Rate"
+              onChange={(e) => setF({ ...f, extras: f.extras.map((x, j) => (j === i ? { ...x, rate: e.target.value } : x)) })} />
+            <button type="button" className="iconbtn clear" aria-label={'Remove ' + c.code}
+              onClick={() => setF({ ...f, extras: f.extras.filter((x, j) => j !== i) })}><Icon d="close" size={16} stroke={2} /></button>
+          </div>
+        ))}
+        <button type="button" className="btn sm dashed" style={{ alignSelf: 'flex-start' }}
+          onClick={() => setF({ ...f, extras: f.extras.concat([{ code: CURRENCIES.find((k) => k !== f.homeCurrency && k !== f.localCurrency && !f.extras.some((x) => x.code === k)) || 'USD', rate: '' }]) })}>
+          <Icon d="plus" size={15} stroke={2} />Add a currency
+        </button>
       </div>
       <div className="grid2">
         <Field label="Your name" id="t-me"><input id="t-me" className="input" value={f.myName} onChange={set('myName')} placeholder="e.g. Sam" /></Field>

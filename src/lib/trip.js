@@ -36,7 +36,7 @@ export const costText = (it, trip) => {
   const local = trip.localCurrency || 'THB';
   const home = trip.homeCurrency || 'EUR';
   const main = money(it.price, it.cur);
-  const other = it.cur === local ? money(toHome(it.price, it.cur, trip), home) : money(toLocal(it.price, it.cur, trip), local);
+  const other = it.cur === home ? money(toLocal(it.price, it.cur, trip), local) : money(toHome(it.price, it.cur, trip), home);
   const split = it.split === 'payer' ? 'not split' : 'split equally';
   return main + ' (≈ ' + other + ') · paid by ' + nameOf(trip, it.paidBy) + ', ' + split;
 };

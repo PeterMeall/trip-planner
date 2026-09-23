@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { Sheet, SheetHead, Field, TypePicker, TimeSelect, ConfirmButton } from '../components/ui.jsx';
-import { parseAmount, tm, fromMin } from '../lib/util.js';
+import { parseAmount, tm, fromMin, currenciesOf } from '../lib/util.js';
 import { addRow, updateRow, deleteRow } from '../lib/data.js';
 import { dayLabel } from '../lib/trip.js';
 
 export function WishForm({ ctx, wish }) {
   const { trip, wishes, me, close, flash } = ctx;
   const editing = !!wish;
-  const [f, setF] = useState(() => wish ? { ...wish, est: wish.est === 0 ? '0' : wish.est ? String(wish.est) : '', note: wish.note || '', area: wish.area || '' } : { title: '', type: 'activity', area: '', est: '', note: '' });
+  const [f, setF] = useState(() => wish ? { ...wish, est: wish.est === 0 ? '0' : wish.est ? String(wish.est) : '', note: wish.note || '', area: wish.area || '', estCur: wish.estCur || trip.localCurrency } : { title: '', type: 'activity', area: '', est: '', estCur: trip.localCurrency, note: '' });
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
   const areas = Array.from(new Set(wishes.map((w) => w.area).filter(Boolean)));
 
@@ -15,7 +15,7 @@ export function WishForm({ ctx, wish }) {
     e.preventDefault();
     if (!f.title.trim()) return;
     const est = String(f.est).trim() === '0' ? 0 : parseAmount(f.est) || null;
-    const data = { title: f.title.trim(), type: f.type, area: f.area.trim(), est, note: f.note.trim() };
+    const data = { title: f.title.trim(), type: f.type, area: f.area.trim(), est, estCur: f.estCur, note: f.note.trim() };
     if (editing) updateRow(trip.id, 'wishlist', wish.id, data);
     else addRow(trip.id, 'wishlist', { ...data, keen: [me] });
     flash(editing ? 'Saved' : 'Added to the wishlist');
@@ -33,7 +33,15 @@ export function WishForm({ ctx, wish }) {
             <input id="w-area" className="input" list="w-areas" value={f.area} onChange={(e) => set('area', e.target.value)} placeholder="e.g. Bangkok" />
             <datalist id="w-areas">{areas.map((a) => <option key={a} value={a} />)}</datalist>
           </Field>
-          <Field label={'Rough cost (' + trip.localCurrency + ')'} id="w-est"><input id="w-est" className="input" inputMode="decimal" value={f.est} onChange={(e) => set('est', e.target.value)} placeholder="Optional" /></Field>
+          <div className="field">
+            <label htmlFor="w-est">Rough cost</label>
+            <div className="row" style={{ gap: 6 }}>
+              <input id="w-est" className="input grow" inputMode="decimal" value={f.est} onChange={(e) => set('est', e.target.value)} placeholder="Optional" />
+              <select aria-label="Currency" className="input" style={{ width: 84, flexShrink: 0 }} value={f.estCur} onChange={(e) => set('estCur', e.target.value)}>
+                {currenciesOf(trip).map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
         </div>
         <Field label="Note" id="w-note"><textarea id="w-note" className="input" value={f.note} onChange={(e) => set('note', e.target.value)} placeholder="Why it's worth it, opening times…" /></Field>
         <button className="btn primary" disabled={!f.title.trim()}>{editing ? 'Save changes' : 'Save to wishlist'}</button>

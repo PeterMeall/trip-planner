@@ -46,7 +46,7 @@ export default function Expenses({ ctx }) {
       <main className="screen">
         <div className="between">
           <h1 className="h1">Expenses</h1>
-          <span className="small muted">1 {home} = {trip.rate} {local}</span>
+          <span className="small muted" style={{ textAlign: 'right' }}>1 {home} = {[{ code: local, rate: trip.rate }].concat(trip.extraCurrencies || []).map((c) => Number(c.rate).toLocaleString('en-GB') + ' ' + c.code).join(' · ')}</span>
         </div>
 
         <div className="card" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14, borderRadius: 20 }}>

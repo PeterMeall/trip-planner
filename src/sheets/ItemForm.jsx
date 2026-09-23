@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Sheet, SheetHead, Field, TypePicker, TimeSelect, Seg, ConfirmButton } from '../components/ui.jsx';
-import { TYPE_ORDER, tm, fromMin, parseAmount, nameOf, addDays } from '../lib/util.js';
+import { TYPE_ORDER, tm, fromMin, parseAmount, nameOf, addDays, currenciesOf, lastCurrency, rememberCurrency } from '../lib/util.js';
 import { addRow, updateRow, deleteRow } from '../lib/data.js';
 import { dayLabel } from '../lib/trip.js';
 
@@ -14,7 +14,7 @@ export default function ItemForm({ ctx, item, date, start, type }) {
   } : {
     type: type || 'activity', title: '', date: date || days[0], endDate: addDays(date || days[0], 1),
     start: type === 'hotel' ? '14:00' : s0, end: type === 'hotel' ? '11:00' : fromMin(Math.min(tm(s0) + 60, 1425)),
-    allDay: false, place: '', ref: '', note: '', price: '', cur: trip.localCurrency, paidBy: me, split: 'half'
+    allDay: false, place: '', ref: '', note: '', price: '', cur: lastCurrency(trip), paidBy: me, split: 'half'
   });
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
   const stay = f.type === 'hotel';
@@ -25,6 +25,7 @@ export default function ItemForm({ ctx, item, date, start, type }) {
     e.preventDefault();
     if (!f.title.trim()) return;
     const price = parseAmount(f.price);
+    if (price) rememberCurrency(trip, f.cur);
     const data = {
       type: f.type, title: f.title.trim(), date: f.date, start: f.allDay && !stay ? '' : f.start, end: f.allDay && !stay ? '' : f.end,
       allDay: !stay && f.allDay, place: f.place.trim(), q: f.place.trim() || f.title.trim(), ref: f.ref.trim(), note: f.note.trim(),
@@ -92,7 +93,7 @@ export default function ItemForm({ ctx, item, date, start, type }) {
           </Field>
           <Field label="Currency" id="i-cur">
             <select id="i-cur" className="input" value={f.cur} onChange={(e) => set('cur', e.target.value)}>
-              {Array.from(new Set([trip.localCurrency, trip.homeCurrency])).map((c) => <option key={c} value={c}>{c}</option>)}
+              {currenciesOf(trip).map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </Field>
           <Field label="Paid by" id="i-paid">

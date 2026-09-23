@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Sheet, SheetHead, Field, Chips, Seg, ConfirmButton } from '../components/ui.jsx';
 import Attachments from '../components/Attachments.jsx';
-import { EXP_CATS, parseAmount, nameOf } from '../lib/util.js';
+import { EXP_CATS, parseAmount, nameOf, currenciesOf, lastCurrency, rememberCurrency } from '../lib/util.js';
 import { addRow, updateRow, deleteRow, addAttachment } from '../lib/data.js';
 
 export default function ExpenseForm({ ctx, expense }) {
   const { trip, me, now, close, flash } = ctx;
   const editing = !!expense;
   const [f, setF] = useState(() => expense ? { ...expense, amount: String(expense.amount), date: expense.date || '' } : {
-    title: '', amount: '', cur: trip.localCurrency, cat: 'food', date: now.date, paidBy: me, split: 'half'
+    title: '', amount: '', cur: lastCurrency(trip), cat: 'food', date: now.date, paidBy: me, split: 'half'
   });
   const [pending, setPending] = useState(null);
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
@@ -18,6 +18,7 @@ export default function ExpenseForm({ ctx, expense }) {
   const save = (e) => {
     e.preventDefault();
     if (!f.title.trim() || !amount) return;
+    rememberCurrency(trip, f.cur);
     const data = { title: f.title.trim(), amount, cur: f.cur, cat: f.cat, date: f.date || null, paidBy: f.paidBy, split: f.split };
     if (editing) updateRow(trip.id, 'expenses', expense.id, data);
     else {
@@ -39,7 +40,7 @@ export default function ExpenseForm({ ctx, expense }) {
           </Field>
           <Field label="Currency" id="x-cur">
             <select id="x-cur" className="input" value={f.cur} onChange={(e) => set('cur', e.target.value)}>
-              {Array.from(new Set([trip.localCurrency, trip.homeCurrency])).map((c) => <option key={c} value={c}>{c}</option>)}
+              {currenciesOf(trip).map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </Field>
         </div>

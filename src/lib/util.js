@@ -100,23 +100,44 @@ export const nowIn = (tz) => {
   return { date: g('year') + '-' + g('month') + '-' + g('day'), min, label: fromMin(min) };
 };
 
+const SYMBOLS = { EUR: '€', THB: '฿', GBP: '£', USD: '$', JPY: '¥', AUD: 'A$', SGD: 'S$', IDR: 'Rp ', MYR: 'RM ', PHP: '₱', KRW: '₩' };
+const SUFFIX = { VND: ' ₫', KHR: ' ៛', LAK: ' ₭' };
 export const money = (n, cur) => {
-  const sym = { EUR: '€', THB: '฿', GBP: '£', USD: '$' }[cur] || (cur ? cur + ' ' : '');
-  return sym + Math.round(n || 0).toLocaleString('en-GB');
+  const num = Math.round(n || 0).toLocaleString('en-GB');
+  if (SUFFIX[cur]) return num + SUFFIX[cur];
+  return (SYMBOLS[cur] || (cur ? cur + ' ' : '')) + num;
 };
-export const toHome = (amount, cur, trip) => {
-  const home = trip.homeCurrency || 'EUR';
-  if (!cur || cur === home) return Number(amount) || 0;
-  return (Number(amount) || 0) / (Number(trip.rate) || 1);
+
+// Rates are stored as "1 home currency = X of this currency".
+// The main local currency uses trip.rate; any others (e.g. VND for a Vietnam leg) live in trip.extraCurrencies.
+export const rateFor = (cur, trip) => {
+  if (!cur || cur === (trip.homeCurrency || 'EUR')) return 1;
+  if (cur === (trip.localCurrency || 'THB')) return Number(trip.rate) || 1;
+  const x = (trip.extraCurrencies || []).find((c) => c.code === cur);
+  return x ? Number(x.rate) || 1 : 1;
 };
-export const toLocal = (amount, cur, trip) => {
-  const local = trip.localCurrency || 'THB';
-  if (cur === local) return Number(amount) || 0;
-  return (Number(amount) || 0) * (Number(trip.rate) || 1);
-};
+export const currenciesOf = (trip) => Array.from(new Set(
+  [trip.localCurrency || 'THB', trip.homeCurrency || 'EUR'].concat((trip.extraCurrencies || []).map((c) => c.code))
+));
+export const toHome = (amount, cur, trip) => (Number(amount) || 0) / rateFor(cur, trip);
+export const toLocal = (amount, cur, trip) => toHome(amount, cur, trip) * (Number(trip.rate) || 1);
+// Accepts "1200", "12.50", "12,50" and thousands separators like "250.000" or "250,000" (common for dong).
 export const parseAmount = (v) => {
-  const n = parseFloat(String(v || '').replace(/\s/g, '').replace(',', '.'));
+  let s = String(v || '').replace(/[\s\u00a0]/g, '');
+  if (/^\d{1,3}([.,]\d{3})+$/.test(s)) s = s.replace(/[.,]/g, '');
+  else s = s.replace(',', '.');
+  const n = parseFloat(s);
   return n > 0 ? n : 0;
+};
+
+// Remembers the last currency used on this phone, so a Vietnam leg doesn't mean switching every time.
+export const lastCurrency = (trip) => {
+  let c = null;
+  try { c = window.localStorage.getItem('cur:' + trip.id); } catch (e) { c = null; }
+  return c && currenciesOf(trip).includes(c) ? c : trip.localCurrency;
+};
+export const rememberCurrency = (trip, cur) => {
+  try { window.localStorage.setItem('cur:' + trip.id, cur); } catch (e) { /* private mode */ }
 };
 
 export const mapsUrl = (q) => 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(q || '');

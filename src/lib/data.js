@@ -29,9 +29,25 @@ export function useSub(tripId, name) {
   const [rows, setRows] = useState([]);
   useEffect(() => {
     if (!tripId) return undefined;
-    return onSnapshot(collection(db, 'trips', tripId, name), (snap) => {
-      setRows(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    }, (err) => console.error(name, err));
+    // A brand-new trip may not have reached the server yet, so the security rules can refuse the
+    // first subscription. Listeners stop after an error, so keep retrying until it works.
+    let unsub = () => {};
+    let timer = null;
+    let stopped = false;
+    let attempt = 0;
+    const listen = () => {
+      unsub = onSnapshot(collection(db, 'trips', tripId, name), (snap) => {
+        attempt = 0;
+        setRows(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      }, (err) => {
+        console.warn('Retrying ' + name + ' after: ' + err.code);
+        if (stopped) return;
+        attempt += 1;
+        timer = setTimeout(listen, Math.min(1000 * attempt, 10000));
+      });
+    };
+    listen();
+    return () => { stopped = true; clearTimeout(timer); unsub(); };
   }, [tripId, name]);
   return rows;
 }
