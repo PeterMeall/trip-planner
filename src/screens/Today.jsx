@@ -1,4 +1,4 @@
-import { Icon, TypeBubble } from '../components/ui.jsx';
+import { Icon, TypeBubble, MeButton } from '../components/ui.jsx';
 import { t } from '../lib/i18n.js';
 import { dLong, daysBetween, mapsUrl, tm, TYPES } from '../lib/util.js';
 import { dayItems, staysFor, timeLabel, startMs, endMs } from '../lib/trip.js';
@@ -39,7 +39,7 @@ export default function Today({ ctx }) {
           {idx >= 0 && <span className="sub">{t('{time} local time', { time: now.label })}</span>}
           {before && <span className="sub">{t('Here\u2019s what\u2019s planned for your first day.')}</span>}
         </div>
-        <button className="iconbtn clear" aria-label={t('Settings')} onClick={() => open({ kind: 'settings' })}><Icon d="gear" size={22} /></button>
+        <MeButton ctx={ctx} />
       </div>
 
       {alertParts.length > 0 && (
@@ -80,6 +80,11 @@ export default function Today({ ctx }) {
             <a className="btn light" href={mapsUrl(next.q || next.place || next.title)} target="_blank" rel="noopener noreferrer">
               <Icon d="pin" size={18} stroke={2} />{t('Directions')}
             </a>
+            {next.type !== 'flight' && next.place && (
+              <button className="btn ghost" style={{ flex: '0 0 auto', padding: '0 14px' }} aria-label={t('Show the driver')} onClick={() => open({ kind: 'driver', id: next.id })}>
+                <Icon d="car" size={20} stroke={2} />
+              </button>
+            )}
             <button className="btn ghost" onClick={() => open({ kind: 'item', id: next.id })}>{t('Details')}</button>
           </div>
         </div>
@@ -117,6 +122,8 @@ export default function Today({ ctx }) {
                 {night.place && <span className="small muted">{night.place}</span>}
               </span>
             </button>
+            <button className="iconbtn" style={{ background: '#F4E2EA', color: '#7A3566' }} onClick={() => open({ kind: 'driver', id: night.id })}
+              aria-label={t('Show the driver')}><Icon d="car" size={20} stroke={1.9} /></button>
             <a className="iconbtn" style={{ background: '#F4E2EA', color: '#7A3566' }} href={mapsUrl(night.q || night.place || night.title)}
               target="_blank" rel="noopener noreferrer" aria-label={t('Directions to tonight\u2019s stay')}><Icon d="pin" size={20} stroke={2} /></a>
           </div>

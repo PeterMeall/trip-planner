@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Fab, TypeBubble, Icon } from '../components/ui.jsx';
+import { Fab, TypeBubble, Icon, MeButton } from '../components/ui.jsx';
 import { EXP_CATS, TYPES, OTHER_LOOK, money, nameOf, toLocal } from '../lib/util.js';
 import { allExpenses, balances, dayLabel } from '../lib/trip.js';
 import { addRow } from '../lib/data.js';
@@ -46,9 +46,12 @@ export default function Expenses({ ctx }) {
   return (
     <>
       <main className="screen">
-        <div className="between">
-          <h1 className="h1">{t('Expenses')}</h1>
-          <span className="small muted" style={{ textAlign: 'right' }}>1 {home} = {[{ code: local, rate: trip.rate }].concat(trip.extraCurrencies || []).map((c) => Number(c.rate).toLocaleString(getLang() === 'nl' ? 'nl-NL' : 'en-GB') + ' ' + c.code).join(' · ')}</span>
+        <div className="head-row">
+          <div className="stack grow" style={{ gap: 2 }}>
+            <h1 className="h1">{t('Expenses')}</h1>
+            <span className="small muted">1 {home} = {[{ code: local, rate: trip.rate }].concat(trip.extraCurrencies || []).map((c) => Number(c.rate).toLocaleString(getLang() === 'nl' ? 'nl-NL' : 'en-GB') + ' ' + c.code).join(' · ')}</span>
+          </div>
+          <MeButton ctx={ctx} />
         </div>
 
         <div className="card" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 14, borderRadius: 20 }}>

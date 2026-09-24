@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { Icon, Fab } from '../components/ui.jsx';
+import { Icon, Fab, MeButton } from '../components/ui.jsx';
 import { t } from '../lib/i18n.js';
 import { TYPES, dWeekday, dNum, dShort, dLong, tm, fromMin } from '../lib/util.js';
 import { dayItems, bandText, staysFor, segment, segmentLabel } from '../lib/trip.js';
@@ -64,9 +64,12 @@ export default function Itinerary({ ctx }) {
     <>
     <main className="screen flat" style={{ display: 'flex', flexDirection: 'column' }}>
       <div className="it-head">
-        <div className="between">
-          <h1 className="h1" style={{ fontSize: 28 }}>{t('Itinerary')}</h1>
-          <span className="small muted">{t('Times in local time')}</span>
+        <div className="head-row">
+          <div className="stack grow" style={{ gap: 2 }}>
+            <h1 className="h1" style={{ fontSize: 28 }}>{t('Itinerary')}</h1>
+            <span className="small muted">{t('Times in local time')}</span>
+          </div>
+          <MeButton ctx={ctx} />
         </div>
         <div className="pills" role="tablist" aria-label={t('Days')}>
           {days.map((d, i) => {

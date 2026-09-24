@@ -22,8 +22,8 @@ export default function Reminders({ ctx }) {
   return (
     <>
       <main className="screen">
+        {ctx.listHead}
         <div className="stack">
-          <h1 className="h1">{t('Reminders')}</h1>
           <span className="sub">{t('{a} to do · {b} done', { a: open2, b: rows.length - open2 })}</span>
         </div>
         {!rows.length && (

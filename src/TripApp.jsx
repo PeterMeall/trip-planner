@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSub, updateTrip, updateRow } from './lib/data.js';
 import { syncTripRates } from './lib/rates.js';
+import { findLocal, placeQuery } from './lib/places.js';
 import { tripDays, nowIn, tm } from './lib/util.js';
-import { Icon } from './components/ui.jsx';
-import { t } from './lib/i18n.js';
+import { Icon, Seg, MeButton } from './components/ui.jsx';
+import { t, getLang } from './lib/i18n.js';
 import Today from './screens/Today.jsx';
 import Itinerary from './screens/Itinerary.jsx';
 import Reminders from './screens/Reminders.jsx';
@@ -16,14 +17,13 @@ import ReminderForm from './sheets/ReminderForm.jsx';
 import { WishForm, PlanWish } from './sheets/WishSheets.jsx';
 import ExpenseForm from './sheets/ExpenseForm.jsx';
 import Settings from './sheets/Settings.jsx';
+import DriverCard from './sheets/DriverCard.jsx';
 
 // Tab labels are kept short so the Dutch versions fit under the icons.
 const TABS = [
   { id: 'today', get label() { return t('Today'); }, icon: 'sun' },
   { id: 'day', get label() { return t('Itinerary'); }, icon: 'calendar' },
-  { id: 'rem', get label() { return t('Reminders'); }, icon: 'bell' },
-  { id: 'wish', get label() { return t('Wishlist'); }, icon: 'heart' },
-  { id: 'pack', get label() { return t('Packing'); }, icon: 'bag' },
+  { id: 'lists', get label() { return t('Lists'); }, icon: 'list' },
   { id: 'money', get label() { return t('Expenses'); }, icon: 'wallet' }
 ];
 
@@ -46,6 +46,7 @@ export default function TripApp({ user, trip, trips, onSwitch, onNewTrip }) {
         trip: (data) => updateTrip(trip.id, data),
         row: (col, id, data) => updateRow(trip.id, col, id, data)
       });
+      prefetchDriver(trip, itemsRaw);
     }, 4000); // give the lists a moment to arrive
     return () => clearTimeout(timer);
   }, [trip, itemsRaw, expenses]);
@@ -60,7 +61,12 @@ export default function TripApp({ user, trip, trips, onSwitch, onNewTrip }) {
     String(a.date).localeCompare(String(b.date)) || tm(a.start) - tm(b.start)), [itemsRaw]);
 
   const inTripIdx = days.indexOf(now.date);
-  const [tab, setTab] = useState('today');
+  const [tab, setTabRaw] = useState('today');
+  // Reminders, Wishlist and Packing live together under "Lists".
+  const [listTab, setListTab] = useState('rem');
+  const setTab = useCallback((id) => {
+    if (id === 'rem' || id === 'wish' || id === 'pack') { setListTab(id); setTabRaw('lists'); } else setTabRaw(id);
+  }, []);
   const [dayIdx, setDayIdx] = useState(inTripIdx >= 0 ? inTripIdx : 0);
   const [sheet, setSheet] = useState(null);
   const [toast, setToast] = useState('');
@@ -116,24 +122,37 @@ export default function TripApp({ user, trip, trips, onSwitch, onNewTrip }) {
     dayIdx, setDayIdx, setTab, open: setSheet, close, flash, onSwitch, onNewTrip,
     remOverdue, remToday, remKey, nowKey
   };
+  ctx.listHead = (
+    <div className="stack" style={{ gap: 12 }}>
+      <div className="head-row">
+        <h1 className="h1 grow">{t('Lists')}</h1>
+        <MeButton ctx={ctx} />
+      </div>
+      <Seg label={t('Lists')} value={listTab} onChange={setListTab} options={[
+        { value: 'rem', label: t('Reminders') + (attention ? ' (' + attention + ')' : '') },
+        { value: 'wish', label: t('Wishlist') },
+        { value: 'pack', label: t('Packing') }
+      ]} />
+    </div>
+  );
 
   return (
     <div className="app">
       {tab === 'today' && <Today ctx={ctx} />}
       {tab === 'day' && <Itinerary ctx={ctx} />}
-      {tab === 'rem' && <Reminders ctx={ctx} />}
-      {tab === 'wish' && <Wishlist ctx={ctx} />}
-      {tab === 'pack' && <Packing ctx={ctx} />}
+      {tab === 'lists' && listTab === 'rem' && <Reminders ctx={ctx} />}
+      {tab === 'lists' && listTab === 'wish' && <Wishlist ctx={ctx} />}
+      {tab === 'lists' && listTab === 'pack' && <Packing ctx={ctx} />}
       {tab === 'money' && <Expenses ctx={ctx} />}
 
       <nav className="tabbar" aria-label={t('Main')}>
         {TABS.map((tb) => (
           <button key={tb.id} className={tab === tb.id ? 'on' : ''} aria-current={tab === tb.id ? 'page' : undefined}
-            aria-label={tb.id === 'rem' && attention ? tb.label + ', ' + (attention === 1 ? t('1 needs attention') : t('{n} need attention', { n: attention })) : tb.label}
-            onClick={() => { setSheet(null); setTab(tb.id); }}>
+            aria-label={tb.id === 'lists' && attention ? tb.label + ', ' + (attention === 1 ? t('1 needs attention') : t('{n} need attention', { n: attention })) : tb.label}
+            onClick={() => { setSheet(null); setTabRaw(tb.id); }}>
             <span style={{ position: 'relative', display: 'flex' }}>
               <Icon d={tb.icon} size={22} />
-              {tb.id === 'rem' && attention > 0 && <span className="badge">{attention}</span>}
+              {tb.id === 'lists' && attention > 0 && <span className="badge">{attention}</span>}
             </span>
             <span className="lbl">{tb.label}</span>
           </button>
@@ -147,8 +166,25 @@ export default function TripApp({ user, trip, trips, onSwitch, onNewTrip }) {
       {sheet && sheet.kind === 'planWish' && <PlanWish ctx={ctx} {...sheet} />}
       {sheet && sheet.kind === 'expForm' && <ExpenseForm ctx={ctx} {...sheet} />}
       {sheet && sheet.kind === 'settings' && <Settings ctx={ctx} />}
+      {sheet && sheet.kind === 'driver' && <DriverCard ctx={ctx} id={sheet.id} />}
 
       {toast && <div className="toast" role="status">{toast}</div>}
     </div>
   );
+}
+
+// Driver cards for the next few days are looked up in the background while there's internet,
+// so they also work later without a connection. Once a day per phone.
+async function prefetchDriver(trip, items) {
+  const today = new Date().toISOString().slice(0, 10);
+  const key = 'drv-sync:' + trip.id + ':' + today;
+  try { if (window.localStorage.getItem(key)) return; } catch (e) { /* private mode */ }
+  const soon = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+  const todo = items.filter((it) => it.type !== 'flight' && it.place && it.date >= today && it.date <= soon
+    && !(it.drv && (it.drv.q === placeQuery(it) || it.drv.src === 'own'))).slice(0, 8);
+  for (const it of todo) {
+    const r = await findLocal(it, trip, getLang());
+    if (r) updateRow(trip.id, 'items', it.id, { drv: r });
+  }
+  try { window.localStorage.setItem(key, '1'); } catch (e) { /* private mode */ }
 }

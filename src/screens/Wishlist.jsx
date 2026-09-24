@@ -18,8 +18,8 @@ export default function Wishlist({ ctx }) {
   return (
     <>
       <main className="screen">
+        {ctx.listHead}
         <div className="stack">
-          <h1 className="h1">{t('Wishlist')}</h1>
           <span className="sub">{(wishes.length === 1 ? t('1 idea') : t('{n} ideas', { n: wishes.length })) + ' · ' + t('{n} on the itinerary', { n: scheduled })}</span>
         </div>
         {areas.length > 2 && (

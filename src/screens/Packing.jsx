@@ -60,11 +60,9 @@ export default function Packing({ ctx }) {
 
   return (
     <main className="screen">
+      {ctx.listHead}
       <div className="stack" style={{ gap: 10 }}>
-        <div className="between">
-          <h1 className="h1">{t('Packing')}</h1>
-          {shown.length > 0 && <span style={{ fontSize: 14, fontWeight: 700 }}>{t('{a} of {b} packed', { a: done, b: shown.length })}</span>}
-        </div>
+        {shown.length > 0 && <span className="sub">{t('{a} of {b} packed', { a: done, b: shown.length })}</span>}
         {shown.length > 0 && (
           <div className="progress" role="progressbar" aria-label={t('Packing progress')} aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct}>
             <div style={{ width: pct + '%' }} />

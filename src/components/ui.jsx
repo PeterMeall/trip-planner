@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ICONS, TYPES } from '../lib/util.js';
+import { ICONS, TYPES, nameOf } from '../lib/util.js';
 import { t } from '../lib/i18n.js';
 
 export function Icon({ d, size = 20, stroke = 1.8, fill = 'none', color = 'currentColor', style }) {
@@ -121,5 +121,16 @@ export function ConfirmButton({ onConfirm, children, confirmText }) {
   return (
     <button type="button" className="btn danger" style={armed ? { background: 'var(--danger)', color: '#FFFBF5', borderColor: 'var(--danger)' } : undefined}
       onClick={() => (armed ? onConfirm() : setArmed(true))}>{armed ? (confirmText || t('Tap again to delete')) : (children || t('Delete'))}</button>
+  );
+}
+
+// Settings button: your initial in a circle with a small cog, top right on every main screen.
+export function MeButton({ ctx }) {
+  const name = nameOf(ctx.trip, ctx.me) || '?';
+  return (
+    <button className="me-btn" aria-label={t('Settings')} onClick={() => ctx.open({ kind: 'settings' })}>
+      {name.charAt(0).toUpperCase()}
+      <span className="me-gear"><Icon d="gear" size={12} stroke={2.2} /></span>
+    </button>
   );
 }

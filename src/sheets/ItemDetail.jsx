@@ -53,9 +53,14 @@ export default function ItemDetail({ ctx, id }) {
           onClick={() => open({ kind: 'itemForm', item: it })}><Icon d="edit" size={15} stroke={2} />{t('Edit')}</button>
       </div>
 
-      <a className="btn primary" href={mapsUrl(it.q || it.place || it.title)} target="_blank" rel="noopener noreferrer">
-        <Icon d="pin" size={18} stroke={2} />{t('Directions in Google Maps')}
-      </a>
+      <div className="grid2">
+        <button className="btn outline" onClick={() => open({ kind: 'driver', id: it.id })}>
+          <Icon d="car" size={18} stroke={2} />{t('Show the driver')}
+        </button>
+        <a className="btn primary" href={mapsUrl(it.q || it.place || it.title)} target="_blank" rel="noopener noreferrer">
+          <Icon d="pin" size={18} stroke={2} />{t('Directions')}
+        </a>
+      </div>
     </Sheet>
   );
 }
