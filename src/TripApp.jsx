@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSub } from './lib/data.js';
 import { tripDays, nowIn, tm } from './lib/util.js';
 import { Icon } from './components/ui.jsx';
@@ -52,6 +52,38 @@ export default function TripApp({ user, trip, trips, onSwitch, onNewTrip }) {
 
   const flash = useCallback((msg) => { setToast(msg); setTimeout(() => setToast(''), 1800); }, []);
   const close = useCallback(() => setSheet(null), []);
+
+  // Android back button: close an open sheet first, then return to Today, and only leave the app from Today.
+  // Whenever we're somewhere back should handle, one extra history entry "catches" the back press.
+  const guarded = useRef(false);
+  const ignorePop = useRef(false);
+  const current = useRef({ tab, sheet });
+  current.current = { tab, sheet };
+  const [guardTick, setGuardTick] = useState(0);
+  const needsGuard = !!sheet || tab !== 'today';
+  useEffect(() => {
+    if (needsGuard && !guarded.current) {
+      window.history.pushState({ chiabel: true }, '');
+      guarded.current = true;
+    } else if (!needsGuard && guarded.current) {
+      // Back on Today through the tab bar: drop the extra entry so the next back press leaves the app.
+      guarded.current = false;
+      ignorePop.current = true;
+      window.history.back();
+    }
+  }, [needsGuard, guardTick]);
+  useEffect(() => {
+    const onPop = () => {
+      if (ignorePop.current) { ignorePop.current = false; return; }
+      guarded.current = false;
+      const s = current.current;
+      if (s.sheet) setSheet(null);
+      else if (s.tab !== 'today') setTab('today');
+      setGuardTick((x) => x + 1);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
   useEffect(() => {
     const onErr = (e) => flash(t('Couldn\u2019t save: {error}', { error: e.detail }));
     window.addEventListener('write-error', onErr);
