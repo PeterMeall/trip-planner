@@ -106,14 +106,13 @@ export function Fab({ onClick, label }) {
   );
 }
 
+// Uses the phone's own time picker (the clock / wheel on Android, wheels on iPhone), to the minute.
 export function TimeSelect({ id, value, onChange }) {
   return (
-    <select id={id} className="input" value={value} onChange={(e) => onChange(e.target.value)}>
-      {TIMESLIST.map((t) => <option key={t} value={t}>{t}</option>)}
-    </select>
+    <input id={id} className="input" type="time" step="60" value={value || ''} required
+      onChange={(e) => { if (e.target.value) onChange(e.target.value.slice(0, 5)); }} />
   );
 }
-const TIMESLIST = (() => { const o = []; for (let m = 0; m < 1440; m += 15) o.push(String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0')); return o; })();
 
 // Two-tap delete, so nothing is removed by accident (and no browser pop-ups).
 export function ConfirmButton({ onConfirm, children, confirmText }) {

@@ -170,3 +170,5 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .error { background: var(--danger-soft); color: var(--danger-ink); padding: 12px 14px; border-radius: 12px; font-size: 14px; line-height: 1.4; }
 .toast { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(var(--tabbar) + 90px); background: var(--ink); color: var(--surface); padding: 10px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; z-index: 30; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+input[type="time"].input { padding: 0 10px; min-width: 0; font-variant-numeric: tabular-nums; }
+input[type="time"].input::-webkit-calendar-picker-indicator { margin-left: 2px; opacity: 0.6; }
