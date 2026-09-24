@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { Icon, Fab, MeButton } from '../components/ui.jsx';
+import { useDayWeather, wxShort } from '../lib/weather.js';
 import { t } from '../lib/i18n.js';
 import { TYPES, dWeekday, dNum, dShort, dLong, tm, fromMin } from '../lib/util.js';
 import { dayItems, bandText, staysFor, segment, segmentLabel } from '../lib/trip.js';
@@ -59,6 +60,7 @@ export default function Itinerary({ ctx }) {
   const go = (n) => setDayIdx(Math.max(0, Math.min(days.length - 1, n)));
   const guard = (fn) => () => { if (swipe.current.swiped) { swipe.current.swiped = false; return; } fn(); };
   const night = staysFor(items, date).night;
+  const wx = useDayWeather(ctx, date);
 
   return (
     <>
@@ -92,7 +94,8 @@ export default function Itinerary({ ctx }) {
         <button className="iconbtn clear" aria-label={t('Previous day')} disabled={dayIdx === 0} onClick={() => go(dayIdx - 1)}><Icon d="chevL" size={22} stroke={2} /></button>
         <div className="stack grow" style={{ alignItems: 'center', gap: 1 }}>
           <span style={{ fontSize: 17, fontWeight: 700 }}>{t('Day {n}', { n: dayIdx + 1 })} · {dShort(date)}</span>
-          <span className="small muted">{list.length ? (list.length === 1 ? t('1 plan') : t('{n} plans', { n: list.length })) : t('Nothing planned yet')}</span>
+          <span className="small muted wx-mini">{list.length ? (list.length === 1 ? t('1 plan') : t('{n} plans', { n: list.length })) : t('Nothing planned yet')}
+            {wx && <> · <Icon d={wx.icon} size={15} stroke={2} /><span title={wx.label}>{wxShort(wx)}</span></>}</span>
         </div>
         <button className="iconbtn clear" aria-label={t('Next day')} disabled={dayIdx === days.length - 1} onClick={() => go(dayIdx + 1)}><Icon d="chevR" size={22} stroke={2} /></button>
       </div>

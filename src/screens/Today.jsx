@@ -1,6 +1,7 @@
 import { Icon, TypeBubble, MeButton } from '../components/ui.jsx';
 import { t } from '../lib/i18n.js';
 import { dLong, daysBetween, mapsUrl, tm, TYPES } from '../lib/util.js';
+import { useDayWeather } from '../lib/weather.js';
 import { dayItems, staysFor, timeLabel, startMs, endMs } from '../lib/trip.js';
 
 export default function Today({ ctx }) {
@@ -18,6 +19,7 @@ export default function Today({ ctx }) {
   const next = upcoming[0];
   const later = upcoming.slice(1);
   const night = staysFor(items, showDate).night;
+  const wx = useDayWeather(ctx, showDate);
 
   const diff = next && idx >= 0 ? Math.round((startMs(next, trip) - nowMs) / 60000) : 0;
   const countdown = diff > 0 ? t('in {time}', { time: ((Math.floor(diff / 60) ? Math.floor(diff / 60) + ' ' + t('h') + ' ' : '') + (diff % 60 ? (diff % 60) + ' min' : '')).trim() }) : '';
@@ -29,6 +31,7 @@ export default function Today({ ctx }) {
   const toGo = before ? daysBetween(now.date, days[0]) : 0;
 
   return (
+    <>
     <main className="screen">
       <div className="row" style={{ alignItems: 'flex-start' }}>
         <div className="stack grow">
@@ -38,6 +41,15 @@ export default function Today({ ctx }) {
           <h1 className="h1 big">{before ? t('Day 1: {date}', { date: dLong(days[0]) }) : dLong(showDate)}</h1>
           {idx >= 0 && <span className="sub">{t('{time} local time', { time: now.label })}</span>}
           {before && <span className="sub">{t('Here\u2019s what\u2019s planned for your first day.')}</span>}
+          {wx && (
+            <span className="wx-line">
+              <Icon d={wx.icon} size={22} stroke={1.8} />
+              <span className="stack" style={{ gap: 0 }}>
+                <span><b>{Math.round(wx.max)}°</b> <span className="muted">/ {Math.round(wx.min)}°</span> · {wx.label}</span>
+                <span className="small muted">{[wx.rain >= 20 ? t('{n}% chance of rain', { n: wx.rain }) : '', wx.place].filter(Boolean).join(' · ')}</span>
+              </span>
+            </span>
+          )}
         </div>
         <MeButton ctx={ctx} />
       </div>
@@ -134,5 +146,9 @@ export default function Today({ ctx }) {
         )}
       </section>
     </main>
+    <button className="fab ext" onClick={() => open({ kind: 'expForm' })} aria-label={t('Add an expense')}>
+      <Icon d="plus" size={20} stroke={2.4} />{t('Expense')}
+    </button>
+    </>
   );
 }

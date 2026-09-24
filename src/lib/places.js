@@ -114,3 +114,22 @@ async function findLocalInner(it, trip, appLang) {
   }
   return { q, lang, localName: (loc && loc.name) || '', localAddr, appAddr: tidy(hit.display_name), src: 'map' };
 }
+
+// Coordinates for a place (used for the weather). Cached on this phone.
+const geoMem = {};
+export async function geocode(q) {
+  const key = 'geo:' + q.toLowerCase();
+  if (geoMem[key]) return geoMem[key];
+  try { const c = JSON.parse(window.localStorage.getItem(key) || 'null'); if (c) { geoMem[key] = c; return c; } } catch (e) { /* ignore */ }
+  let hit = null;
+  try {
+    hit = await search(q, 'en');
+    const comma = q.indexOf(',');
+    if (!hit && comma > 0) hit = await search(q.slice(comma + 1).trim(), 'en');
+  } catch (e) { return null; } // offline: try again later
+  const a = (hit && hit.address) || {};
+  const out = hit ? { lat: Number(hit.lat), lon: Number(hit.lon), name: a.island || a.town || a.city || a.village || a.suburb || a.county || a.state || '' } : { none: true };
+  geoMem[key] = out;
+  try { window.localStorage.setItem(key, JSON.stringify(out)); } catch (e) { /* ignore */ }
+  return out;
+}

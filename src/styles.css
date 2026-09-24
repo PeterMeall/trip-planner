@@ -188,3 +188,7 @@ input[type="time"].input::-webkit-calendar-picker-indicator { margin-left: 2px; 
 .driver-addr { font-size: 24px; font-weight: 600; line-height: 1.45; color: #1E1612; word-break: break-word; }
 .driver-app { border-top: 1px dashed var(--line); padding-top: 14px; display: flex; flex-direction: column; gap: 4px; font-size: 16px; color: var(--ink-2); }
 .driver-app-title { font-weight: 700; color: var(--ink); }
+.fab.ext { width: auto; padding: 0 20px 0 16px; height: 52px; border-radius: 26px; gap: 6px; font-weight: 700; font-size: 15px; font-family: var(--body); }
+.wx-line { display: flex; align-items: center; gap: 10px; margin-top: 6px; font-size: 15px; color: var(--ink-2); }
+.wx-line svg { color: var(--primary); }
+.wx-mini { display: inline-flex; align-items: center; gap: 3px; }
