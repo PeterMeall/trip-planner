@@ -2,7 +2,7 @@ import { Sheet, Icon, TypeBubble } from '../components/ui.jsx';
 import { t } from '../lib/i18n.js';
 import Attachments from '../components/Attachments.jsx';
 import { TYPES, mapsUrl, nameOf } from '../lib/util.js';
-import { costText, dayLabel, timeLabel, isStay } from '../lib/trip.js';
+import { costText, dayLabel, timeLabel, isStay, durationText } from '../lib/trip.js';
 
 export default function ItemDetail({ ctx, id }) {
   const { trip, items, days, close, open, flash } = ctx;
@@ -26,7 +26,7 @@ export default function ItemDetail({ ctx, id }) {
       </div>
 
       <div className="card list details" style={{ borderColor: 'var(--divider)', borderRadius: 14 }}>
-        <div><span className="label">{t('When')}</span><span className="v">{isStay(it) ? timeLabel(it) + (it.start ? ' · ' + t('check-in from {time}', { time: it.start }) : '') + (it.end ? ', ' + t('check-out by {time}', { time: it.end }) : '') : dayLabel(days, it.date) + ' · ' + timeLabel(it)}</span></div>
+        <div><span className="label">{t('When')}</span><span className="v">{isStay(it) ? timeLabel(it) + (it.start ? ' · ' + t('check-in from {time}', { time: it.start }) : '') + (it.end ? ', ' + t('check-out by {time}', { time: it.end }) : '') : dayLabel(days, it.date) + ' · ' + timeLabel(it, trip) + (durationText(it, trip) ? ' (' + durationText(it, trip) + ')' : '')}</span></div>
         {it.place && <div><span className="label">{t('Where')}</span><span className="v">{it.place}</span></div>}
         <div><span className="label">{t('Cost')}</span><span className="v">{costText(it, trip)}</span></div>
         {it.ref && (

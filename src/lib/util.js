@@ -166,3 +166,55 @@ export const nameOf = (trip, email) => {
 };
 
 export const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+
+// ---------- Time zones ----------
+// Offset (ms) of a time zone from UTC at a given instant.
+const tzOffset = (ms, tz) => {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+  }).formatToParts(new Date(ms));
+  const g = (k) => Number(parts.find((p) => p.type === k).value);
+  return Date.UTC(g('year'), g('month') - 1, g('day'), g('hour'), g('minute'), g('second')) - ms;
+};
+// Wall-clock date + time in a zone -> absolute time (ms since epoch).
+export const zonedMs = (date, time, tz) => {
+  const [y, m, d] = String(date).split('-').map(Number);
+  const guess = Date.UTC(y, m - 1, d, 0, 0) + tm(time || '00:00') * 60000;
+  if (!tz) return guess;
+  let ms = guess - tzOffset(guess, tz);
+  ms = guess - tzOffset(ms, tz);
+  return ms;
+};
+export const utcOffsetLabel = (tz, date) => {
+  const off = Math.round(tzOffset(date ? zonedMs(date, '12:00', tz) : Date.now(), tz) / 60000);
+  const sign = off < 0 ? '−' : '+';
+  const a = Math.abs(off);
+  return 'UTC' + sign + Math.floor(a / 60) + (a % 60 ? ':' + pad(a % 60) : '');
+};
+export const cityOf = (tz) => {
+  const z = ZONES.find(([id]) => id === tz);
+  if (z) return z[1];
+  return String(tz || '').split('/').pop().replace(/_/g, ' ');
+};
+export const durationLabel = (ms) => {
+  const mins = Math.round(ms / 60000);
+  if (mins <= 0) return '';
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return (h ? h + ' ' + t('h') : '') + (h && m ? ' ' : '') + (m ? m + ' min' : '');
+};
+
+// Places for the time zone pickers (city names are the same in English and Dutch).
+export const ZONES = [
+  ['Europe/Amsterdam', 'Amsterdam'], ['Europe/London', 'London'], ['Europe/Paris', 'Paris'], ['Europe/Istanbul', 'Istanbul'],
+  ['Asia/Dubai', 'Dubai'], ['Asia/Qatar', 'Doha'], ['Asia/Kolkata', 'India'], ['Asia/Kathmandu', 'Kathmandu'],
+  ['Asia/Bangkok', 'Bangkok'], ['Asia/Ho_Chi_Minh', 'Ho Chi Minh City / Hanoi'], ['Asia/Phnom_Penh', 'Phnom Penh'], ['Asia/Vientiane', 'Vientiane'],
+  ['Asia/Kuala_Lumpur', 'Kuala Lumpur'], ['Asia/Singapore', 'Singapore'], ['Asia/Jakarta', 'Jakarta'], ['Asia/Makassar', 'Bali'],
+  ['Asia/Manila', 'Manila'], ['Asia/Hong_Kong', 'Hong Kong'], ['Asia/Shanghai', 'China'], ['Asia/Taipei', 'Taipei'],
+  ['Asia/Seoul', 'Seoul'], ['Asia/Tokyo', 'Tokyo'], ['Australia/Perth', 'Perth'], ['Australia/Sydney', 'Sydney'],
+  ['Pacific/Auckland', 'Auckland'], ['America/New_York', 'New York'], ['America/Chicago', 'Chicago'], ['America/Denver', 'Denver'],
+  ['America/Los_Angeles', 'Los Angeles'], ['America/Mexico_City', 'Mexico City'], ['America/Sao_Paulo', 'São Paulo'], ['Africa/Johannesburg', 'Johannesburg']
+];
+
+// Travel types can depart and arrive in different time zones.
+export const TRAVEL_TYPES = ['flight', 'transport', 'boat'];

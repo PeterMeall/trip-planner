@@ -1,5 +1,6 @@
-import { addDays, tm } from './util.js';
+import { addDays } from './util.js';
 import { t } from './i18n.js';
+import { endDateOf, startTzOf, endTzOf } from './trip.js';
 
 // Builds an .ics calendar file that Google Calendar (and Apple Calendar) can import.
 const esc = (s) => String(s || '').replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
@@ -24,12 +25,12 @@ export function buildIcs(trip, items) {
     if (it.type === 'hotel') {
       lines.push('DTSTART;VALUE=DATE:' + d8(it.date), 'DTEND;VALUE=DATE:' + d8(it.endDate || addDays(it.date, 1)), 'SUMMARY:' + esc(t('Stay: {name}', { name: it.title })));
     } else if (it.allDay || !it.start) {
-      lines.push('DTSTART;VALUE=DATE:' + d8(it.date), 'DTEND;VALUE=DATE:' + d8(addDays(it.date, 1)), 'SUMMARY:' + esc(it.title));
+      lines.push('DTSTART;VALUE=DATE:' + d8(it.date), 'DTEND;VALUE=DATE:' + d8(addDays(endDateOf(it), 1)), 'SUMMARY:' + esc(it.title));
     } else {
-      let endDate = it.date;
-      let end = it.end || it.start;
-      if (tm(end) <= tm(it.start)) { if (it.end) endDate = addDays(it.date, 1); else end = it.start; }
-      lines.push('DTSTART;TZID=' + tz + ':' + d8(it.date) + 'T' + t6(it.start), 'DTEND;TZID=' + tz + ':' + d8(endDate) + 'T' + t6(end), 'SUMMARY:' + esc(it.title));
+      // Each end in its own time zone, so a flight shows correctly in any calendar.
+      const s = startTzOf(it, trip);
+      const e = endTzOf(it, trip);
+      lines.push('DTSTART;TZID=' + s + ':' + d8(it.date) + 'T' + t6(it.start), 'DTEND;TZID=' + e + ':' + d8(endDateOf(it)) + 'T' + t6(it.end || it.start), 'SUMMARY:' + esc(it.title));
     }
     if (it.place) lines.push('LOCATION:' + esc(it.place));
     const desc = [it.ref ? t('Booking ref: {ref}', { ref: it.ref }) : '', it.note || ''].filter(Boolean).join('\n');

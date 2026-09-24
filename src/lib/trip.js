@@ -1,8 +1,47 @@
 import { t } from './i18n.js';
-import { tm, dShort, money, toHome, toLocal, nameOf, TYPE_TO_CAT } from './util.js';
+import { tm, dShort, money, toHome, toLocal, nameOf, TYPE_TO_CAT, addDays, zonedMs, cityOf, durationLabel } from './util.js';
 
 export const isStay = (it) => it.type === 'hotel';
-export const dayItems = (items, date) => items.filter((it) => !isStay(it) && it.date === date);
+export const tripTz = (trip) => (trip && trip.timezone) || 'Asia/Bangkok';
+
+// Last day an item runs into. Items can span days (overnight train, long-haul flight).
+// Older items with an end time before the start time are treated as ending the next day.
+export const endDateOf = (it) => {
+  if (isStay(it)) return it.endDate || it.date;
+  if (it.endDate && it.endDate >= it.date) return it.endDate;
+  if (!it.allDay && it.end && it.start && tm(it.end) < tm(it.start)) return addDays(it.date, 1);
+  return it.date;
+};
+export const startTzOf = (it, trip) => it.startTz || tripTz(trip);
+export const endTzOf = (it, trip) => it.endTz || it.startTz || tripTz(trip);
+
+// Absolute start and end (ms), taking each end's own time zone into account.
+export const startMs = (it, trip) => zonedMs(it.date, it.allDay ? '00:00' : it.start, startTzOf(it, trip));
+export const endMs = (it, trip) => {
+  const s = startMs(it, trip);
+  if (it.allDay) return zonedMs(addDays(endDateOf(it), 1), '00:00', endTzOf(it, trip));
+  const e = zonedMs(endDateOf(it), it.end || it.start, endTzOf(it, trip));
+  return e > s ? e : s + 30 * 60000;
+};
+
+export const dayItems = (items, date) => items.filter((it) => !isStay(it) && it.date <= date && date <= endDateOf(it));
+
+// The part of an item that falls on one calendar day, in minutes from midnight (local wall-clock times).
+export const segment = (it, date) => {
+  const last = endDateOf(it);
+  const first = date === it.date;
+  const isLast = date === last;
+  const st = first ? tm(it.start) : 0;
+  let en = isLast ? tm(it.end || it.start) : 1440;
+  if (en <= st) en = Math.min(st + 30, 1440);
+  return { st, en, first, last: isLast, multi: it.date !== last };
+};
+
+const zoneNote = (it, trip, which) => {
+  const tz = which === 'start' ? startTzOf(it, trip) : endTzOf(it, trip);
+  const differs = startTzOf(it, trip) !== endTzOf(it, trip) || tz !== tripTz(trip);
+  return differs ? ' ' + cityOf(tz) : '';
+};
 
 // Which stay covers the night of `date`, and which one checks out that morning.
 export const staysFor = (items, date) => {
@@ -28,10 +67,31 @@ export const dayLabel = (days, date) => {
   return (i >= 0 ? t('Day {n}', { n: i + 1 }) + ' · ' : '') + dShort(date);
 };
 
-export const timeLabel = (it) => {
+export const timeLabel = (it, trip) => {
   if (isStay(it)) return t('{from} to {to}', { from: dShort(it.date), to: dShort(it.endDate || it.date) });
-  if (it.allDay) return t('All day');
-  return it.start + (it.end && it.end !== it.start ? '–' + it.end : '');
+  const last = endDateOf(it);
+  if (it.allDay) return last !== it.date ? t('{from} to {to}', { from: dShort(it.date), to: dShort(last) }) : t('All day');
+  const zoned = it.startTz || it.endTz;
+  if (last === it.date && !zoned) return it.start + (it.end && it.end !== it.start ? '–' + it.end : '');
+  const a = it.start + zoneNote(it, trip, 'start');
+  const b = (last !== it.date ? dShort(last) + ' ' : '') + (it.end || it.start) + zoneNote(it, trip, 'end');
+  return a + ' → ' + b;
+};
+
+// Short label for the block on one day of the itinerary grid.
+export const segmentLabel = (it, date, trip) => {
+  const seg = segment(it, date);
+  if (!seg.multi) return timeLabel(it, trip);
+  if (seg.first) return t('{time} → {day}', { time: it.start + zoneNote(it, trip, 'start'), day: dShort(endDateOf(it)) });
+  if (seg.last) return t('arrives {time}', { time: (it.end || it.start) + zoneNote(it, trip, 'end') });
+  return t('continues');
+};
+
+// "11 h 30 min", only for items that cross days or time zones.
+export const durationText = (it, trip) => {
+  if (isStay(it) || it.allDay) return '';
+  if (endDateOf(it) === it.date && !it.startTz && !it.endTz) return '';
+  return durationLabel(endMs(it, trip) - startMs(it, trip));
 };
 
 export const costText = (it, trip) => {

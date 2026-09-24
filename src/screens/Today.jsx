@@ -1,9 +1,7 @@
 import { Icon, TypeBubble } from '../components/ui.jsx';
 import { t } from '../lib/i18n.js';
 import { dLong, daysBetween, mapsUrl, tm, TYPES } from '../lib/util.js';
-import { dayItems, staysFor, timeLabel } from '../lib/trip.js';
-
-const endMin = (it) => Math.max(tm(it.end || it.start), tm(it.start) + 30);
+import { dayItems, staysFor, timeLabel, startMs, endMs } from '../lib/trip.js';
 
 export default function Today({ ctx }) {
   const { trip, items, days, now, open, setTab, remOverdue, remToday } = ctx;
@@ -11,15 +9,17 @@ export default function Today({ ctx }) {
   const before = days.length && now.date < days[0];
   const after = days.length && now.date > days[days.length - 1];
   const showDate = idx >= 0 ? now.date : (before ? days[0] : days[days.length - 1]);
-  const list = dayItems(items, showDate);
+  // Compare real moments in time, so flights and trains in other time zones line up correctly.
+  const nowMs = Date.now();
+  const list = dayItems(items, showDate).filter((it) => !it.allDay).sort((a, b) => startMs(a, trip) - startMs(b, trip));
 
-  const current = idx >= 0 ? list.find((it) => !it.allDay && tm(it.start) <= now.min && now.min < endMin(it)) : null;
-  const upcoming = idx >= 0 ? list.filter((it) => !it.allDay && tm(it.start) > now.min) : list;
+  const current = idx >= 0 ? list.find((it) => startMs(it, trip) <= nowMs && nowMs < endMs(it, trip)) : null;
+  const upcoming = idx >= 0 ? list.filter((it) => startMs(it, trip) > nowMs) : list.filter((it) => it.date === showDate);
   const next = upcoming[0];
   const later = upcoming.slice(1);
   const night = staysFor(items, showDate).night;
 
-  const diff = next && idx >= 0 ? tm(next.start) - now.min : 0;
+  const diff = next && idx >= 0 ? Math.round((startMs(next, trip) - nowMs) / 60000) : 0;
   const countdown = diff > 0 ? t('in {time}', { time: ((Math.floor(diff / 60) ? Math.floor(diff / 60) + ' ' + t('h') + ' ' : '') + (diff % 60 ? (diff % 60) + ' min' : '')).trim() }) : '';
 
   const alertParts = [];
@@ -73,7 +73,7 @@ export default function Today({ ctx }) {
             </span>
             <div className="stack">
               <span className="title">{next.title}</span>
-              <span className="soft" style={{ fontSize: 15 }}>{timeLabel(next)}{next.place ? ' · ' + next.place : ''}</span>
+              <span className="soft" style={{ fontSize: 15 }}>{timeLabel(next, trip)}{next.place ? ' · ' + next.place : ''}</span>
             </div>
           </div>
           <div className="row">

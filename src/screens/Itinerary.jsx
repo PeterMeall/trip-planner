@@ -2,17 +2,15 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Icon, Fab } from '../components/ui.jsx';
 import { t } from '../lib/i18n.js';
 import { TYPES, dWeekday, dNum, dShort, dLong, tm, fromMin } from '../lib/util.js';
-import { dayItems, bandText, staysFor, timeLabel } from '../lib/trip.js';
+import { dayItems, bandText, staysFor, segment, segmentLabel } from '../lib/trip.js';
 
 const H = 52;
 
 // Places overlapping items side by side.
-function layout(list) {
+function layout(list, date) {
   const timed = list.filter((it) => !it.allDay).map((it) => {
-    const st = tm(it.start);
-    let en = tm(it.end || it.start);
-    if (en <= st) en = it.end && tm(it.end) < st ? 1440 : st + 30; // overnight or no end
-    return { it, st, en: Math.max(en, st + 30) };
+    const seg = segment(it, date);
+    return { it, st: seg.st, en: Math.max(seg.en, Math.min(seg.st + 30, 1440)), seg };
   }).sort((a, b) => a.st - b.st);
   const out = [];
   let cluster = [];
@@ -41,7 +39,7 @@ export default function Itinerary({ ctx }) {
   const { trip, items, days, now, dayIdx, setDayIdx, open } = ctx;
   const date = days[dayIdx] || days[0];
   const list = dayItems(items, date);
-  const placed = useMemo(() => layout(list), [list]);
+  const placed = useMemo(() => layout(list, date), [list, date]);
   const allDay = list.filter((it) => it.allDay);
   const startHour = Math.min(6, ...placed.map((p) => Math.floor(p.st / 60)));
   const hours = [];
@@ -56,7 +54,7 @@ export default function Itinerary({ ctx }) {
     const first = placed.length ? placed[0].st : 8 * 60;
     const target = date === now.date ? Math.min(now.min, first) : first;
     wrap.current.scrollTop = Math.max(0, top(target) - 40);
-  }, [date]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [date, placed.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const go = (n) => setDayIdx(Math.max(0, Math.min(days.length - 1, n)));
   const guard = (fn) => () => { if (swipe.current.swiped) { swipe.current.swiped = false; return; } fn(); };
@@ -146,9 +144,9 @@ export default function Itinerary({ ctx }) {
                 <Icon d={ty.icon} size={16} stroke={2} style={{ flexShrink: 0, marginTop: 2 }} />
                 <span className="stack grow" style={{ gap: 1, minWidth: 0 }}>
                   <span className="t">{it.title}</span>
-                  {h >= 44 && <span className="s">{timeLabel(it)}</span>}
+                  {h >= 44 && <span className="s">{segmentLabel(it, date, trip)}</span>}
                 </span>
-                {h < 44 && lanes === 1 && <span className="s" style={{ fontWeight: 600, flexShrink: 0 }}>{it.start}</span>}
+                {h < 44 && lanes === 1 && <span className="s" style={{ fontWeight: 600, flexShrink: 1, maxWidth: '55%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{segmentLabel(it, date, trip)}</span>}
               </button>
             );
           })}

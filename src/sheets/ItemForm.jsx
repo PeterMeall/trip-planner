@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Sheet, SheetHead, Field, TypePicker, TimeSelect, Seg, ConfirmButton } from '../components/ui.jsx';
 import { t } from '../lib/i18n.js';
-import { TYPE_ORDER, tm, fromMin, parseAmount, nameOf, addDays, currenciesOf, lastCurrency, rememberCurrency } from '../lib/util.js';
+import { TYPE_ORDER, TRAVEL_TYPES, ZONES, tm, fromMin, parseAmount, nameOf, addDays, currenciesOf, lastCurrency, rememberCurrency, zonedMs, utcOffsetLabel, cityOf, durationLabel } from '../lib/util.js';
 import { addRow, updateRow, deleteRow } from '../lib/data.js';
-import { dayLabel } from '../lib/trip.js';
+import { dayLabel, endDateOf, tripTz } from '../lib/trip.js';
 
 export default function ItemForm({ ctx, item, date, start, type }) {
   const { trip, me, days, close, open, flash } = ctx;
@@ -11,14 +11,22 @@ export default function ItemForm({ ctx, item, date, start, type }) {
   const s0 = start || '10:00';
   const [f, setF] = useState(() => item ? {
     ...item, price: item.price ? String(item.price) : '', cur: item.cur || trip.localCurrency, paidBy: item.paidBy || me, split: item.split || 'half',
-    endDate: item.endDate || addDays(item.date, 1), allDay: !!item.allDay
+    endDate: item.endDate || addDays(item.date, 1), allDay: !!item.allDay,
+    arrDate: endDateOf(item), startTz: item.startTz || tripTz(trip), endTz: item.endTz || item.startTz || tripTz(trip)
   } : {
     type: type || 'activity', title: '', date: date || days[0], endDate: addDays(date || days[0], 1),
     start: type === 'hotel' ? '14:00' : s0, end: type === 'hotel' ? '11:00' : fromMin(Math.min(tm(s0) + 60, 1425)),
-    allDay: false, place: '', ref: '', note: '', price: '', cur: lastCurrency(trip), paidBy: me, split: 'half'
+    allDay: false, place: '', ref: '', note: '', price: '', cur: lastCurrency(trip), paidBy: me, split: 'half',
+    arrDate: date || days[0], startTz: tripTz(trip), endTz: tripTz(trip)
   });
+  const [error, setError] = useState('');
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
   const stay = f.type === 'hotel';
+  const travel = TRAVEL_TYPES.includes(f.type) && !f.allDay;
+  const setDate = (v) => setF((x) => ({ ...x, date: v, arrDate: x.arrDate < v || x.arrDate === x.date ? v : x.arrDate }));
+  // Arrival can be up to three days after departure (long-haul flights, overnight trains and ferries).
+  const arrOptions = [0, 1, 2, 3].map((n) => addDays(f.date, n));
+  const journeyMs = travel ? zonedMs(f.arrDate, f.end, f.endTz) - zonedMs(f.date, f.start, f.startTz) : 0;
 
   const setStart = (v) => setF((x) => ({ ...x, start: v, end: tm(x.end) > tm(v) || stay ? x.end : fromMin(Math.min(tm(v) + 60, 1425)) }));
 
@@ -26,12 +34,17 @@ export default function ItemForm({ ctx, item, date, start, type }) {
     e.preventDefault();
     if (!f.title.trim()) return;
     const price = parseAmount(f.price);
+    if (travel && journeyMs <= 0) { setError(t('It arrives before it departs. Check the days, times and time zones.')); return; }
     if (price) rememberCurrency(trip, f.cur);
+    // Travel keeps its own days and time zones; anything else that ends "earlier" than it starts runs past midnight.
+    const zoned = travel && (f.startTz !== tripTz(trip) || f.endTz !== tripTz(trip));
+    const otherEnd = !stay && !f.allDay && !travel && tm(f.end) < tm(f.start) ? addDays(f.date, 1) : null;
     const data = {
       type: f.type, title: f.title.trim(), date: f.date, start: f.allDay && !stay ? '' : f.start, end: f.allDay && !stay ? '' : f.end,
       allDay: !stay && f.allDay, place: f.place.trim(), q: f.place.trim() || f.title.trim(), ref: f.ref.trim(), note: f.note.trim(),
       price: price || null, cur: price ? f.cur : null, paidBy: price ? f.paidBy : null, split: price ? f.split : null,
-      endDate: stay ? (f.endDate > f.date ? f.endDate : addDays(f.date, 1)) : null
+      endDate: stay ? (f.endDate > f.date ? f.endDate : addDays(f.date, 1)) : travel ? (f.arrDate !== f.date ? f.arrDate : null) : otherEnd,
+      startTz: zoned ? f.startTz : null, endTz: zoned ? f.endTz : null
     };
     if (editing) { updateRow(trip.id, 'items', item.id, data); open({ kind: 'item', id: item.id }); return; }
     addRow(trip.id, 'items', { ...data, by: me });
@@ -69,16 +82,39 @@ export default function ItemForm({ ctx, item, date, start, type }) {
           </>
         ) : (
           <>
-            <Field label={t('Day')} id="i-day">
-              <select id="i-day" className="input" value={f.date} onChange={(e) => set('date', e.target.value)}>
+            <Field label={travel ? t('Departs') : t('Day')} id="i-day">
+              <select id="i-day" className="input" value={f.date} onChange={(e) => setDate(e.target.value)}>
                 {days.map((d) => <option key={d} value={d}>{dayLabel(days, d)}</option>)}
               </select>
             </Field>
             <Seg options={[{ value: false, label: t('Set times') }, { value: true, label: t('All day') }]} value={f.allDay} onChange={(v) => set('allDay', v)} label={t('Timing')} />
-            {!f.allDay && (
-              <div className="grid2">
-                <Field label={t('From')} id="i-s"><TimeSelect id="i-s" value={f.start} onChange={setStart} /></Field>
-                <Field label={t('To')} id="i-e"><TimeSelect id="i-e" value={f.end} onChange={(v) => set('end', v)} /></Field>
+            {!f.allDay && !travel && (
+              <>
+                <div className="grid2">
+                  <Field label={t('From')} id="i-s"><TimeSelect id="i-s" value={f.start} onChange={setStart} /></Field>
+                  <Field label={t('To')} id="i-e"><TimeSelect id="i-e" value={f.end} onChange={(v) => set('end', v)} /></Field>
+                </div>
+                {tm(f.end) < tm(f.start) && <span className="small muted">{t('Ends the next day')}</span>}
+              </>
+            )}
+            {travel && (
+              <div className="card" style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10, borderRadius: 14 }}>
+                <div className="grid2" style={{ gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.7fr)' }}>
+                  <Field label={t('Departure time')} id="i-s"><TimeSelect id="i-s" value={f.start} onChange={(v) => set('start', v)} /></Field>
+                  <Field label={t('Time zone')} id="i-sz"><ZoneSelect id="i-sz" value={f.startTz} date={f.date} onChange={(v) => setF((x) => ({ ...x, startTz: v, endTz: x.endTz === x.startTz ? v : x.endTz }))} /></Field>
+                </div>
+                <div className="grid2" style={{ gridTemplateColumns: 'minmax(0, 1.7fr) minmax(0, 1fr)' }}>
+                  <Field label={t('Arrives')} id="i-ad">
+                    <select id="i-ad" className="input" value={f.arrDate} onChange={(e) => set('arrDate', e.target.value)}>
+                      {arrOptions.map((d) => <option key={d} value={d}>{dayLabel(days, d)}</option>)}
+                    </select>
+                  </Field>
+                  <Field label={t('Arrival time')} id="i-e"><TimeSelect id="i-e" value={f.end} onChange={(v) => set('end', v)} /></Field>
+                </div>
+                <Field label={t('Time zone on arrival')} id="i-ez"><ZoneSelect id="i-ez" value={f.endTz} date={f.arrDate} onChange={(v) => set('endTz', v)} /></Field>
+                <span className="small" style={{ fontWeight: 600, color: journeyMs > 0 ? 'var(--muted)' : 'var(--danger)' }}>
+                  {journeyMs > 0 ? t('Journey time: {time}', { time: durationLabel(journeyMs) }) : t('It arrives before it departs. Check the days, times and time zones.')}
+                </span>
               </div>
             )}
           </>
@@ -110,9 +146,20 @@ export default function ItemForm({ ctx, item, date, start, type }) {
         <Field label={t('Booking reference')} id="i-ref"><input id="i-ref" className="input" value={f.ref} onChange={(e) => set('ref', e.target.value)} placeholder={t('Optional')} /></Field>
         <Field label={t('Notes')} id="i-note"><textarea id="i-note" className="input" value={f.note} onChange={(e) => set('note', e.target.value)} placeholder={t('Optional')} /></Field>
 
+        {error && <p className="error" role="alert">{error}</p>}
         <button className="btn primary" disabled={!f.title.trim()}>{editing ? t('Save changes') : t('Add')}</button>
         {editing && <ConfirmButton onConfirm={remove} />}
       </form>
     </Sheet>
+  );
+}
+
+// Time zone picker: common places, plus whatever the item already uses.
+function ZoneSelect({ id, value, date, onChange }) {
+  const list = ZONES.some(([z]) => z === value) ? ZONES : [[value, cityOf(value)]].concat(ZONES);
+  return (
+    <select id={id} className="input" value={value} onChange={(e) => onChange(e.target.value)}>
+      {list.map(([z, name]) => <option key={z} value={z}>{name} ({utcOffsetLabel(z, date)})</option>)}
+    </select>
   );
 }

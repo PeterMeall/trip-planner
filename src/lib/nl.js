@@ -345,5 +345,18 @@ export default {
   'This trip': 'Deze reis',
   'Save trip settings': 'Reisinstellingen opslaan',
   'Plan another trip': 'Nog een reis plannen',
-  'Sign out': 'Uitloggen'
+  'Sign out': 'Uitloggen',
+  // Journeys across days and time zones
+  'It arrives before it departs. Check the days, times and time zones.': 'De aankomst ligt voor het vertrek. Controleer de dagen, tijden en tijdzones.',
+  'Ends the next day': 'Eindigt de volgende dag',
+  'Departs': 'Vertrek',
+  'Departure time': 'Vertrektijd',
+  'Time zone': 'Tijdzone',
+  'Arrives': 'Aankomst',
+  'Arrival time': 'Aankomsttijd',
+  'Time zone on arrival': 'Tijdzone bij aankomst',
+  'Journey time: {time}': 'Reistijd: {time}',
+  '{time} → {day}': '{time} → {day}',
+  'arrives {time}': 'aankomst {time}',
+  'continues': 'onderweg',
 };
