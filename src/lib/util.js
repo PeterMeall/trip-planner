@@ -136,8 +136,13 @@ export const rateFor = (cur, trip) => {
 export const currenciesOf = (trip) => Array.from(new Set(
   [trip.localCurrency || 'THB', trip.homeCurrency || 'EUR'].concat((trip.extraCurrencies || []).map((c) => c.code))
 ));
-export const toHome = (amount, cur, trip) => (Number(amount) || 0) / rateFor(cur, trip);
-export const toLocal = (amount, cur, trip) => toHome(amount, cur, trip) * (Number(trip.rate) || 1);
+// `rate` is the rate saved with a price or expense (the rate of the day it was paid).
+// Without one, the trip's current rates are used.
+export const toHome = (amount, cur, trip, rate) => {
+  if (!cur || cur === (trip.homeCurrency || 'EUR')) return Number(amount) || 0;
+  return (Number(amount) || 0) / (Number(rate) > 0 ? Number(rate) : rateFor(cur, trip));
+};
+export const toLocal = (amount, cur, trip, rate) => toHome(amount, cur, trip, rate) * (Number(trip.rate) || 1);
 // Accepts "1200", "12.50", "12,50" and thousands separators like "250.000" or "250,000" (common for dong).
 export const parseAmount = (v) => {
   let s = String(v || '').replace(/[\s\u00a0]/g, '');

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSub } from './lib/data.js';
+import { useSub, updateTrip, updateRow } from './lib/data.js';
+import { syncTripRates } from './lib/rates.js';
 import { tripDays, nowIn, tm } from './lib/util.js';
 import { Icon } from './components/ui.jsx';
 import { t } from './lib/i18n.js';
@@ -34,6 +35,20 @@ export default function TripApp({ user, trip, trips, onSwitch, onNewTrip }) {
   const packing = useSub(trip.id, 'packing');
   const expenses = useSub(trip.id, 'expenses');
   const attachments = useSub(trip.id, 'attachments');
+
+  // Exchange rates: today's rate for the trip, and the rate of the day for anything already paid.
+  const rateSynced = useRef(false);
+  useEffect(() => {
+    if (rateSynced.current) return undefined;
+    const timer = setTimeout(() => {
+      rateSynced.current = true;
+      syncTripRates(trip, itemsRaw, expenses, {
+        trip: (data) => updateTrip(trip.id, data),
+        row: (col, id, data) => updateRow(trip.id, col, id, data)
+      });
+    }, 4000); // give the lists a moment to arrive
+    return () => clearTimeout(timer);
+  }, [trip, itemsRaw, expenses]);
 
   // Re-render every minute so "now", countdowns and overdue reminders stay current.
   const [tick, setTick] = useState(0);

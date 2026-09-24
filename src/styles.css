@@ -172,3 +172,5 @@ textarea.input { height: auto; min-height: 76px; padding: 12px 14px; resize: ver
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 input[type="time"].input { padding: 0 10px; min-width: 0; font-variant-numeric: tabular-nums; }
 input[type="time"].input::-webkit-calendar-picker-indicator { margin-left: 2px; opacity: 0.6; }
+
+.tag.topay { margin-left: 8px; background: #FBE3D2; color: #A0441F; vertical-align: 2px; font-size: 10px; padding: 2px 7px; }

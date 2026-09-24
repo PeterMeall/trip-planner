@@ -13,7 +13,7 @@ export default function Expenses({ ctx }) {
   const all = allExpenses(items, expenses, trip, nowKey);
   const spend = all.filter((e) => e.split !== 'transfer');
   const total = spend.reduce((a, e) => a + e.home, 0);
-  const spent = spend.filter((e) => !e.planned).reduce((a, e) => a + e.home, 0);
+  const toPay = spend.filter((e) => !e.paid).reduce((a, e) => a + e.home, 0);
   const cats = Object.keys(EXP_CATS).map((k) => ({ k, ...EXP_CATS[k], sum: spend.filter((e) => e.cat === k).reduce((a, e) => a + e.home, 0) })).filter((c) => c.sum > 0);
 
   const members = trip.members || [];
@@ -35,7 +35,8 @@ export default function Expenses({ ctx }) {
     flash(t('Settled up'));
   };
 
-  const shown = all.filter((e) => filter === 'all' || e.src === filter);
+  const unpaidCount = spend.filter((e) => !e.paid).length;
+  const shown = all.filter((e) => filter === 'all' || (filter === 'topay' ? !e.paid : e.src === filter));
   const keys = Array.from(new Set(shown.map((e) => (e.date && days.indexOf(e.date) >= 0 ? e.date : (e.date && e.date > days[days.length - 1] ? 'after' : 'before'))))).sort((x, y) => {
     const rank = (k) => (k === 'before' ? '0' : k === 'after' ? '9' : '5' + k);
     return rank(x).localeCompare(rank(y));
@@ -55,7 +56,7 @@ export default function Expenses({ ctx }) {
             <span className="eyebrow">{t('Trip total')}</span>
             <span style={{ fontFamily: 'var(--display)', fontSize: 40, fontWeight: 500, lineHeight: 1.1 }}>{money(total, home)}</span>
             <span className="small muted" style={{ fontSize: 14 }}>
-              ≈ {money(toLocal(total, home, trip), local)} · {t('{a} spent so far', { a: money(spent, home) })} · {t('{a} still to come', { a: money(total - spent, home) })}
+              ≈ {money(toLocal(total, home, trip), local)} · {t('{a} paid', { a: money(total - toPay, home) })}{toPay > 0.005 && <> · <b style={{ color: 'var(--accent-ink, var(--accent))' }}>{t('{a} still to pay', { a: money(toPay, home) })}</b></>}
             </span>
           </div>
           {cats.length > 0 && (
@@ -84,8 +85,8 @@ export default function Expenses({ ctx }) {
         )}
 
         <div className="chips" role="group" aria-label={t('Filter expenses')}>
-          {[['all', 'All'], ['itinerary', 'From itinerary'], ['manual', 'Added manually']].map(([v, l]) => (
-            <button key={v} className={'chip' + (filter === v ? ' on' : '')} aria-pressed={filter === v} onClick={() => setFilter(v)}>{t(l)}</button>
+          {[['all', 'All'], ['topay', 'Still to pay'], ['itinerary', 'From itinerary'], ['manual', 'Added manually']].filter(([v]) => v !== 'topay' || unpaidCount || filter === 'topay').map(([v, l]) => (
+            <button key={v} className={'chip' + (filter === v ? ' on' : '')} aria-pressed={filter === v} onClick={() => setFilter(v)}>{t(l)}{v === 'topay' ? ' (' + unpaidCount + ')' : ''}</button>
           ))}
         </div>
 
@@ -105,17 +106,17 @@ export default function Expenses({ ctx }) {
                   const look = e.src === 'itinerary' ? (TYPES[e.type] || TYPES.activity) : (EXP_CATS[e.cat] && TYPES[EXP_CATS[e.cat].type]) || OTHER_LOOK;
                   const receipt = e.src === 'manual' && attachments.some((a) => a.parentId === 'exp:' + e.id);
                   const meta = e.split === 'transfer' ? [t('Payment between you')] : [
-                    t('Paid by {name}', { name: nameOf(trip, e.paidBy) }), e.split === 'payer' ? t('not split') : t('split equally'),
+                    e.paid ? t('Paid by {name}', { name: nameOf(trip, e.paidBy) }) : t('{name} pays', { name: nameOf(trip, e.paidBy) }), e.split === 'payer' ? t('not split') : t('split equally'),
                     e.src === 'itinerary' ? t('from itinerary') : t('added manually')
                   ];
                   if (receipt) meta.push(t('receipt'));
-                  if (e.planned) meta.push(t('planned'));
+                  if (e.planned && e.paid) meta.push(t('planned'));
                   return (
                     <button key={e.key} className="row-btn" style={{ minHeight: 60 }}
                       onClick={() => (e.src === 'itinerary' ? open({ kind: 'item', id: e.itemId }) : open({ kind: 'expForm', expense: expenses.find((x) => x.id === e.id) }))}>
                       <TypeBubble look={look} />
                       <span className="stack grow" style={{ gap: 2 }}>
-                        <span className="row-title">{e.title}</span>
+                        <span className="row-title">{e.title}{!e.paid && <span className="tag topay">{t('To pay')}</span>}</span>
                         <span className="row-meta">{meta.join(' · ')}</span>
                       </span>
                       <span className="stack" style={{ alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>

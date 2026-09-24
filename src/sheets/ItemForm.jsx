@@ -3,6 +3,7 @@ import { Sheet, SheetHead, Field, TypePicker, TimeSelect, Seg, ConfirmButton } f
 import { t } from '../lib/i18n.js';
 import { TYPE_ORDER, TRAVEL_TYPES, ZONES, tm, fromMin, parseAmount, nameOf, addDays, currenciesOf, lastCurrency, rememberCurrency, zonedMs, utcOffsetLabel, cityOf, durationLabel } from '../lib/util.js';
 import { addRow, updateRow, deleteRow } from '../lib/data.js';
+import RateField from '../components/RateField.jsx';
 import { dayLabel, endDateOf, tripTz } from '../lib/trip.js';
 
 export default function ItemForm({ ctx, item, date, start, type }) {
@@ -11,19 +12,20 @@ export default function ItemForm({ ctx, item, date, start, type }) {
   const s0 = start || '10:00';
   const [f, setF] = useState(() => item ? {
     ...item, price: item.price ? String(item.price) : '', cur: item.cur || trip.localCurrency, paidBy: item.paidBy || me, split: item.split || 'half',
+    rate: item.rate ? String(item.rate) : '', rateTouched: !!item.rate, paid: item.paid !== false,
     endDate: item.endDate || addDays(item.date, 1), allDay: !!item.allDay,
     arrDate: endDateOf(item), startTz: item.startTz || tripTz(trip), endTz: item.endTz || item.startTz || tripTz(trip)
   } : {
     type: type || 'activity', title: '', date: date || days[0], endDate: addDays(date || days[0], 1),
     start: type === 'hotel' ? '14:00' : s0, end: type === 'hotel' ? '11:00' : fromMin(Math.min(tm(s0) + 60, 1425)),
-    allDay: false, place: '', ref: '', note: '', price: '', cur: lastCurrency(trip), paidBy: me, split: 'half',
+    allDay: false, place: '', ref: '', note: '', price: '', cur: lastCurrency(trip), paidBy: me, split: 'half', rate: '', rateTouched: false, paid: true,
     arrDate: date || days[0], startTz: tripTz(trip), endTz: tripTz(trip)
   });
   const [error, setError] = useState('');
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
   const stay = f.type === 'hotel';
   const travel = TRAVEL_TYPES.includes(f.type) && !f.allDay;
-  const setDate = (v) => setF((x) => ({ ...x, date: v, arrDate: x.arrDate < v || x.arrDate === x.date ? v : x.arrDate }));
+  const setDate = (v) => setF((x) => ({ ...x, date: v, rateTouched: x.rateTouched && x.date === v, arrDate: x.arrDate < v || x.arrDate === x.date ? v : x.arrDate }));
   // Arrival can be up to three days after departure (long-haul flights, overnight trains and ferries).
   const arrOptions = [0, 1, 2, 3].map((n) => addDays(f.date, n));
   const journeyMs = travel ? zonedMs(f.arrDate, f.end, f.endTz) - zonedMs(f.date, f.start, f.startTz) : 0;
@@ -43,6 +45,7 @@ export default function ItemForm({ ctx, item, date, start, type }) {
       type: f.type, title: f.title.trim(), date: f.date, start: f.allDay && !stay ? '' : f.start, end: f.allDay && !stay ? '' : f.end,
       allDay: !stay && f.allDay, place: f.place.trim(), q: f.place.trim() || f.title.trim(), ref: f.ref.trim(), note: f.note.trim(),
       price: price || null, cur: price ? f.cur : null, paidBy: price ? f.paidBy : null, split: price ? f.split : null,
+      rate: price && f.cur !== trip.homeCurrency && parseAmount(f.rate) ? parseAmount(f.rate) : null, paid: price ? f.paid : null,
       endDate: stay ? (f.endDate > f.date ? f.endDate : addDays(f.date, 1)) : travel ? (f.arrDate !== f.date ? f.arrDate : null) : otherEnd,
       startTz: zoned ? f.startTz : null, endTz: zoned ? f.endTz : null
     };
@@ -129,7 +132,7 @@ export default function ItemForm({ ctx, item, date, start, type }) {
             <input id="i-price" className="input" inputMode="decimal" value={f.price} onChange={(e) => set('price', e.target.value)} placeholder={t('Optional')} />
           </Field>
           <Field label={t('Currency')} id="i-cur">
-            <select id="i-cur" className="input" value={f.cur} onChange={(e) => set('cur', e.target.value)}>
+            <select id="i-cur" className="input" value={f.cur} onChange={(e) => setF((x) => ({ ...x, cur: e.target.value, rateTouched: false }))}>
               {currenciesOf(trip).map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </Field>
@@ -139,6 +142,13 @@ export default function ItemForm({ ctx, item, date, start, type }) {
             </select>
           </Field>
         </div>
+        {parseAmount(f.price) > 0 && (
+          <RateField trip={trip} cur={f.cur} date={f.date} value={f.rate} touched={f.rateTouched}
+            onChange={(v, touched) => setF((x) => ({ ...x, rate: v, rateTouched: touched }))} />
+        )}
+        {parseAmount(f.price) > 0 && (
+          <Seg options={[{ value: true, label: t('Paid') }, { value: false, label: t('Still to pay') }]} value={f.paid} onChange={(v) => set('paid', v)} label={t('Paid')} />
+        )}
         {parseAmount(f.price) > 0 && members.length > 1 && (
           <Seg options={[{ value: 'half', label: t('Split equally') }, { value: 'payer', label: t('Just the payer') }]} value={f.split} onChange={(v) => set('split', v)} label={t('Split')} />
         )}

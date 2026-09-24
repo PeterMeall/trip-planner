@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createTrip, updateTrip } from '../lib/data.js';
 import { Field, Icon } from '../components/ui.jsx';
 import { t } from '../lib/i18n.js';
+import { rateOn, niceRate } from '../lib/rates.js';
 
 export const TIMEZONES = [
   ['Asia/Bangkok', 'Thailand / Vietnam (UTC+7)'], ['Europe/Amsterdam', 'Netherlands'], ['Europe/London', 'United Kingdom'],
@@ -29,6 +30,12 @@ export function TripForm({ user, trip, onSaved, onCancel, submitLabel }) {
   }));
   const [error, setError] = useState('');
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value });
+  // New currency: fill in today's rate (still editable). Only fills a rate that is still empty.
+  const fillRate = (code) => {
+    rateOn(f.homeCurrency, code, null).then((r) => {
+      if (r && r.rate) setF((x) => ({ ...x, extras: x.extras.map((c) => (c.code === code && !c.rate ? { ...c, rate: String(niceRate(r.rate)) } : c)) }));
+    });
+  };
 
   const submit = (e) => {
     e.preventDefault();
@@ -75,10 +82,11 @@ export function TripForm({ user, trip, onSaved, onCancel, submitLabel }) {
       </div>
       <div className="stack" style={{ gap: 8 }}>
         <span className="label">{t('Other currencies on this trip (e.g. VND for a few days in Vietnam)')}</span>
+        <span className="small muted">{t('Rates follow the daily exchange rate automatically. Each price keeps the rate of the day it was paid.')}</span>
         {f.extras.map((c, i) => (
           <div key={i} className="row" style={{ gap: 8 }}>
             <select aria-label={t('Currency')} className="input" style={{ width: 96, flexShrink: 0 }} value={c.code}
-              onChange={(e) => setF({ ...f, extras: f.extras.map((x, j) => (j === i ? { ...x, code: e.target.value } : x)) })}>
+              onChange={(e) => { const code = e.target.value; setF({ ...f, extras: f.extras.map((x, j) => (j === i ? { ...x, code, rate: '' } : x)) }); fillRate(code); }}>
               {CURRENCIES.filter((k) => k !== f.homeCurrency && k !== f.localCurrency).map((k) => <option key={k}>{k}</option>)}
             </select>
             <span className="small muted" style={{ flexShrink: 0 }}>1 {f.homeCurrency} =</span>
@@ -89,7 +97,7 @@ export function TripForm({ user, trip, onSaved, onCancel, submitLabel }) {
           </div>
         ))}
         <button type="button" className="btn sm dashed" style={{ alignSelf: 'flex-start' }}
-          onClick={() => setF({ ...f, extras: f.extras.concat([{ code: CURRENCIES.find((k) => k !== f.homeCurrency && k !== f.localCurrency && !f.extras.some((x) => x.code === k)) || 'USD', rate: '' }]) })}>
+          onClick={() => { const code = CURRENCIES.find((k) => k !== f.homeCurrency && k !== f.localCurrency && !f.extras.some((x) => x.code === k)) || 'USD'; setF({ ...f, extras: f.extras.concat([{ code, rate: '' }]) }); fillRate(code); }}>
           <Icon d="plus" size={15} stroke={2} />{t('Add a currency')}
         </button>
       </div>

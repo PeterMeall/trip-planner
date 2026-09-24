@@ -99,9 +99,10 @@ export const costText = (it, trip) => {
   const local = trip.localCurrency || 'THB';
   const home = trip.homeCurrency || 'EUR';
   const main = money(it.price, it.cur);
-  const other = it.cur === home ? money(toLocal(it.price, it.cur, trip), local) : money(toHome(it.price, it.cur, trip), home);
+  const other = it.cur === home ? money(toLocal(it.price, it.cur, trip), local) : money(toHome(it.price, it.cur, trip, it.rate), home);
   const split = it.split === 'payer' ? t('not split') : t('split equally');
-  return main + ' (≈ ' + other + ') · ' + t('paid by {name}', { name: nameOf(trip, it.paidBy) }) + ', ' + split;
+  const who = it.paid === false ? t('still to pay by {name}', { name: nameOf(trip, it.paidBy) }) : t('paid by {name}', { name: nameOf(trip, it.paidBy) });
+  return main + ' (≈ ' + other + ') · ' + who + ', ' + split;
 };
 
 // All expenses: priced itinerary items plus ones added by hand.
@@ -111,17 +112,19 @@ export const allExpenses = (items, expenses, trip, nowKey) => {
     if (!it.price) return;
     list.push({
       key: 'i' + it.id, src: 'itinerary', itemId: it.id, title: it.title, amount: it.price, cur: it.cur,
-      cat: TYPE_TO_CAT[it.type] || 'other', type: it.type, date: it.date, paidBy: it.paidBy, split: it.split || 'half',
+      cat: TYPE_TO_CAT[it.type] || 'other', type: it.type, date: it.date, paidBy: it.paidBy, split: it.split || 'half', rate: it.rate, paid: it.paid !== false,
       planned: (it.date + ' ' + (it.start || '00:00')) > nowKey
     });
   });
-  expenses.forEach((e) => list.push({ key: 'e' + e.id, src: 'manual', id: e.id, ...e, planned: false }));
-  list.forEach((e) => { e.home = toHome(e.amount, e.cur, trip); });
+  expenses.forEach((e) => list.push({ key: 'e' + e.id, src: 'manual', id: e.id, ...e, paid: e.paid !== false, planned: false }));
+  list.forEach((e) => { e.home = toHome(e.amount, e.cur, trip, e.rate); });
   return list;
 };
 
 // Positive = this person is owed money. Shared costs are split equally between the members.
-export const balances = (list, members) => {
+// Only what has actually been paid counts; "still to pay" joins in once it is marked as paid.
+export const balances = (all, members) => {
+  const list = all.filter((e) => e.paid !== false);
   const bal = {};
   const paid = {};
   members.forEach((m) => { bal[m] = 0; paid[m] = 0; });

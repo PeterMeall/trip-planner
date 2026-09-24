@@ -2,6 +2,7 @@ import { Sheet, Icon, TypeBubble } from '../components/ui.jsx';
 import { t } from '../lib/i18n.js';
 import Attachments from '../components/Attachments.jsx';
 import { TYPES, mapsUrl, nameOf } from '../lib/util.js';
+import { updateRow } from '../lib/data.js';
 import { costText, dayLabel, timeLabel, isStay, durationText } from '../lib/trip.js';
 
 export default function ItemDetail({ ctx, id }) {
@@ -28,7 +29,12 @@ export default function ItemDetail({ ctx, id }) {
       <div className="card list details" style={{ borderColor: 'var(--divider)', borderRadius: 14 }}>
         <div><span className="label">{t('When')}</span><span className="v">{isStay(it) ? timeLabel(it) + (it.start ? ' · ' + t('check-in from {time}', { time: it.start }) : '') + (it.end ? ', ' + t('check-out by {time}', { time: it.end }) : '') : dayLabel(days, it.date) + ' · ' + timeLabel(it, trip) + (durationText(it, trip) ? ' (' + durationText(it, trip) + ')' : '')}</span></div>
         {it.place && <div><span className="label">{t('Where')}</span><span className="v">{it.place}</span></div>}
-        <div><span className="label">{t('Cost')}</span><span className="v">{costText(it, trip)}</span></div>
+        <div><span className="label">{t('Cost')}</span><span className="v">{costText(it, trip)}</span>
+          {it.price && it.paid === false && (
+            <button type="button" className="btn sm" style={{ marginTop: 8, alignSelf: 'flex-start', border: '1px solid var(--line)', background: 'var(--surface)', color: 'var(--primary)' }}
+              onClick={() => { updateRow(trip.id, 'items', it.id, { paid: true }); flash(t('Marked as paid')); }}><Icon d="check" size={15} stroke={2} />{t('Mark as paid')}</button>
+          )}
+        </div>
         {it.ref && (
           <div style={{ flexDirection: 'row', alignItems: 'center', gap: 10, padding: '8px 8px 8px 14px' }}>
             <span className="stack grow" style={{ gap: 2 }}><span className="label">{t('Booking reference')}</span><span className="v" style={{ fontWeight: 700, letterSpacing: '0.04em' }}>{it.ref}</span></span>
