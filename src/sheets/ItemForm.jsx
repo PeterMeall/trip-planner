@@ -139,6 +139,7 @@ export default function ItemForm({ ctx, item, date, start, type }) {
           <Field label={t('Paid by')} id="i-paid">
             <select id="i-paid" className="input" value={f.paidBy} onChange={(e) => set('paidBy', e.target.value)}>
               {members.map((m) => <option key={m} value={m}>{nameOf(trip, m)}</option>)}
+              {(trip.members || []).length > 1 && <option value="joint">{t('Together')}</option>}
             </select>
           </Field>
         </div>
@@ -149,7 +150,7 @@ export default function ItemForm({ ctx, item, date, start, type }) {
         {parseAmount(f.price) > 0 && (
           <Seg options={[{ value: true, label: t('Paid') }, { value: false, label: t('Still to pay') }]} value={f.paid} onChange={(v) => set('paid', v)} label={t('Paid')} />
         )}
-        {parseAmount(f.price) > 0 && members.length > 1 && (
+        {parseAmount(f.price) > 0 && members.length > 1 && f.paidBy !== 'joint' && (
           <Seg options={[{ value: 'half', label: t('Split equally') }, { value: 'payer', label: t('Just the payer') }]} value={f.split} onChange={(v) => set('split', v)} label={t('Split')} />
         )}
 

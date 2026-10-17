@@ -101,8 +101,10 @@ export const costText = (it, trip) => {
   const main = money(it.price, it.cur);
   const other = it.cur === home ? money(toLocal(it.price, it.cur, trip), local) : money(toHome(it.price, it.cur, trip, it.rate), home);
   const split = it.split === 'payer' ? t('not split') : t('split equally');
-  const who = it.paid === false ? t('still to pay by {name}', { name: nameOf(trip, it.paidBy) }) : t('paid by {name}', { name: nameOf(trip, it.paidBy) });
-  return main + ' (≈ ' + other + ') · ' + who + ', ' + split;
+  const joint = it.paidBy === 'joint';
+  const who = joint ? (it.paid === false ? t('still to pay together') : t('paid together'))
+    : it.paid === false ? t('still to pay by {name}', { name: nameOf(trip, it.paidBy) }) : t('paid by {name}', { name: nameOf(trip, it.paidBy) });
+  return main + ' (≈ ' + other + ') · ' + who + (joint ? '' : ', ' + split);
 };
 
 // All expenses: priced itinerary items plus ones added by hand.
@@ -121,6 +123,7 @@ export const allExpenses = (items, expenses, trip, nowKey) => {
   return list;
 };
 
+// Paid "together" (joint account) counts for neither, so it never changes who owes whom.
 // Positive = this person is owed money. Shared costs are split equally between the members.
 // Only what has actually been paid counts; "still to pay" joins in once it is marked as paid.
 export const balances = (all, members) => {

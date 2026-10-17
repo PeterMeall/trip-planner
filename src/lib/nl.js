@@ -401,4 +401,10 @@ export default {
   'Snow': 'Sneeuw',
   'Thunderstorms': 'Onweer',
   '{n}% chance of rain': '{n}% kans op regen',
+  'Together': 'Samen',
+  'paid together': 'samen betaald',
+  'still to pay together': 'nog samen te betalen',
+  'Paid together': 'Samen betaald',
+  'To pay together': 'Samen te betalen',
+  'together {amount}': 'samen {amount}',
 };

@@ -18,6 +18,7 @@ export default function Expenses({ ctx }) {
 
   const members = trip.members || [];
   const { bal, paid } = balances(all, members);
+  const jointPaid = spend.filter((e) => e.paidBy === 'joint' && e.paid).reduce((a, e) => a + e.home, 0);
   let balanceText = t('All square');
   let settle = null;
   if (members.length === 2) {
@@ -81,7 +82,7 @@ export default function Expenses({ ctx }) {
             <div className="stack grow" style={{ gap: 2 }}>
               <span className="eyebrow">{t('Balance')}</span>
               <span style={{ fontSize: 16, fontWeight: 700 }}>{balanceText}</span>
-              <span className="small muted">{members.map((m) => t('{name} paid {amount}', { name: nameOf(trip, m), amount: money(paid[m], home) })).join(' · ')}</span>
+              <span className="small muted">{members.map((m) => t('{name} paid {amount}', { name: nameOf(trip, m), amount: money(paid[m], home) })).concat(jointPaid > 0.005 ? [t('together {amount}', { amount: money(jointPaid, home) })] : []).join(' · ')}</span>
             </div>
             {settle && <button className="btn sm outline" style={{ height: 44 }} onClick={doSettle}>{t('Settle up')}</button>}
           </div>
@@ -109,10 +110,12 @@ export default function Expenses({ ctx }) {
                   const look = e.src === 'itinerary' ? (TYPES[e.type] || TYPES.activity) : (EXP_CATS[e.cat] && TYPES[EXP_CATS[e.cat].type]) || OTHER_LOOK;
                   const receipt = e.src === 'manual' && attachments.some((a) => a.parentId === 'exp:' + e.id);
                   const meta = e.split === 'transfer' ? [t('Payment between you')] : [
-                    e.paid ? t('Paid by {name}', { name: nameOf(trip, e.paidBy) }) : t('{name} pays', { name: nameOf(trip, e.paidBy) }), e.split === 'payer' ? t('not split') : t('split equally'),
+                    e.paidBy === 'joint' ? (e.paid ? t('Paid together') : t('To pay together')) : e.paid ? t('Paid by {name}', { name: nameOf(trip, e.paidBy) }) : t('{name} pays', { name: nameOf(trip, e.paidBy) }),
+                    e.paidBy === 'joint' ? '' : e.split === 'payer' ? t('not split') : t('split equally'),
                     e.src === 'itinerary' ? t('from itinerary') : t('added manually')
                   ];
                   if (receipt) meta.push(t('receipt'));
+                  const metaText = meta.filter(Boolean);
                   if (e.planned && e.paid) meta.push(t('planned'));
                   return (
                     <button key={e.key} className="row-btn" style={{ minHeight: 60 }}
@@ -120,7 +123,7 @@ export default function Expenses({ ctx }) {
                       <TypeBubble look={look} />
                       <span className="stack grow" style={{ gap: 2 }}>
                         <span className="row-title">{e.title}{!e.paid && <span className="tag topay">{t('To pay')}</span>}</span>
-                        <span className="row-meta">{meta.join(' · ')}</span>
+                        <span className="row-meta">{metaText.join(' · ')}</span>
                       </span>
                       <span className="stack" style={{ alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
                         <span className="num" style={{ fontSize: 15, fontWeight: 700 }}>{money(e.amount, e.cur)}</span>

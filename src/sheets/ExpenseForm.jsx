@@ -53,6 +53,7 @@ export default function ExpenseForm({ ctx, expense }) {
           <Field label={t('Paid by')} id="x-paid">
             <select id="x-paid" className="input" value={f.paidBy} onChange={(e) => set('paidBy', e.target.value)}>
               {trip.members.map((m) => <option key={m} value={m}>{nameOf(trip, m)}</option>)}
+              {(trip.members || []).length > 1 && <option value="joint">{t('Together')}</option>}
             </select>
           </Field>
         </div>
@@ -63,7 +64,7 @@ export default function ExpenseForm({ ctx, expense }) {
         {!transfer && (
           <Seg label={t('Paid')} value={f.paid} onChange={(v) => set('paid', v)} options={[{ value: true, label: t('Paid') }, { value: false, label: t('Still to pay') }]} />
         )}
-        {!transfer && trip.members.length > 1 && (
+        {!transfer && trip.members.length > 1 && f.paidBy !== 'joint' && (
           <Seg label={t('Split')} value={f.split} onChange={(v) => set('split', v)} options={[{ value: 'half', label: t('Split equally') }, { value: 'payer', label: t('Just the payer') }]} />
         )}
         <Attachments ctx={ctx} parentId={editing ? 'exp:' + expense.id : null} label={t('Attach a receipt photo')} pending={pending} onPending={setPending} />

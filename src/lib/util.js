@@ -172,6 +172,7 @@ export const mapsUrl = (q) => 'https://www.google.com/maps/dir/?api=1&destinatio
 
 export const nameOf = (trip, email) => {
   if (!email) return '';
+  if (email === 'joint') return t('Together');
   if (email === 'both' || email === 'shared') return email === 'both' ? t('Both') : t('Shared');
   return (trip.names && trip.names[email]) || email.split('@')[0];
 };
