@@ -143,16 +143,26 @@ export default function Itinerary({ ctx }) {
           {placed.map(({ it, st, en, lane, lanes }) => {
             const ty = TYPES[it.type] || TYPES.activity;
             const h = Math.max((en - st) / 60 * H - 3, 26);
+            const note = (it.note || '').trim();
             const w = 'calc((100% - 74px) / ' + lanes + ')';
             return (
               <button key={it.id} className="ev" onClick={guard(() => open({ kind: 'item', id: it.id }))}
                 style={{ top: top(st), height: h, background: ty.bg, color: ty.fg, left: 'calc(60px + ' + w + ' * ' + lane + ')', width: 'calc(' + w + ' - 4px)', right: 'auto' }}>
                 <Icon d={ty.icon} size={16} stroke={2} style={{ flexShrink: 0, marginTop: 2 }} />
                 <span className="stack grow" style={{ gap: 1, minWidth: 0 }}>
-                  <span className="t">{it.title}</span>
-                  {h >= 44 && <span className="s">{segmentLabel(it, date, trip)}</span>}
+                  {/* Notes show under the title when the block has room: in an hour block the time moves up next to the title. */}
+                  {note && h >= 44 && h < 70 ? (
+                    <span className="row" style={{ gap: 6, minWidth: 0 }}>
+                      <span className="t grow" style={{ minWidth: 0 }}>{it.title}</span>
+                      {lanes === 1 && <span className="s" style={{ fontWeight: 600, flexShrink: 1, maxWidth: '50%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{segmentLabel(it, date, trip)}</span>}
+                    </span>
+                  ) : <span className="t">{it.title}</span>}
+                  {h >= 70 && <span className="s">{segmentLabel(it, date, trip)}</span>}
+                  {h >= 44 && !note && h < 70 && <span className="s">{segmentLabel(it, date, trip)}</span>}
+                  {note && h >= 44 && <span className="ev-note" style={{ WebkitLineClamp: Math.max(1, Math.floor((h - (h >= 70 ? 46 : 30)) / 15)) }}>{note}</span>}
                 </span>
                 {h < 44 && lanes === 1 && <span className="s" style={{ fontWeight: 600, flexShrink: 1, maxWidth: '55%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{segmentLabel(it, date, trip)}</span>}
+                {h < 44 && note && <Icon d="note" size={14} stroke={2} style={{ flexShrink: 0, marginTop: 3, opacity: 0.75 }} />}
               </button>
             );
           })}
