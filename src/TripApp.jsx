@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSub, updateTrip, updateRow } from './lib/data.js';
+import { useSub, updateTrip, updateRow, loadFile } from './lib/data.js';
 import { syncTripRates } from './lib/rates.js';
 import { findLocal, placeQuery } from './lib/places.js';
 import { tripDays, nowIn, tm } from './lib/util.js';
@@ -47,9 +47,10 @@ export default function TripApp({ user, trip, trips, onSwitch, onNewTrip }) {
         row: (col, id, data) => updateRow(trip.id, col, id, data)
       });
       prefetchDriver(trip, itemsRaw);
+      prefetchTickets(trip, itemsRaw, attachments);
     }, 4000); // give the lists a moment to arrive
     return () => clearTimeout(timer);
-  }, [trip, itemsRaw, expenses]);
+  }, [trip, itemsRaw, expenses, attachments]);
 
   // Re-render every minute so "now", countdowns and overdue reminders stay current.
   const [tick, setTick] = useState(0);
@@ -187,4 +188,15 @@ async function prefetchDriver(trip, items) {
     if (r) updateRow(trip.id, 'items', it.id, { drv: r });
   }
   try { window.localStorage.setItem(key, '1'); } catch (e) { /* private mode */ }
+}
+
+// Tickets for the next few days are downloaded onto the phone in the background,
+// so they open at the gate or station even without signal.
+async function prefetchTickets(trip, items, attachments) {
+  const today = new Date().toISOString().slice(0, 10);
+  const soon = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+  const ids = new Set(items.filter((it) => (it.endDate || it.date) >= today && it.date <= soon).map((it) => 'item:' + it.id));
+  for (const a of attachments.filter((x) => ids.has(x.parentId))) {
+    try { await loadFile(trip.id, a.id); } catch (e) { /* offline: try again next time */ }
+  }
 }

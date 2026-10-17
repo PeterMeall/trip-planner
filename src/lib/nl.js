@@ -407,4 +407,8 @@ export default {
   'Paid together': 'Samen betaald',
   'To pay together': 'Samen te betalen',
   'together {amount}': 'samen {amount}',
+  'Show ticket': 'Ticket tonen',
+  'Show tickets ({n})': 'Tickets tonen ({n})',
+  'Tickets': 'Tickets',
+  'Ticket': 'Ticket',
 };

@@ -2,6 +2,7 @@ import { Icon, TypeBubble, MeButton } from '../components/ui.jsx';
 import { t } from '../lib/i18n.js';
 import { dLong, daysBetween, mapsUrl, tm, TYPES } from '../lib/util.js';
 import { useDayWeather } from '../lib/weather.js';
+import TicketButton from '../components/TicketButton.jsx';
 import { dayItems, staysFor, timeLabel, startMs, endMs } from '../lib/trip.js';
 
 export default function Today({ ctx }) {
@@ -20,6 +21,7 @@ export default function Today({ ctx }) {
   const later = upcoming.slice(1);
   const night = staysFor(items, showDate).night;
   const wx = useDayWeather(ctx, showDate);
+  const hasTicket = !!next && ctx.attachments.some((a) => a.parentId === 'item:' + next.id);
 
   const diff = next && idx >= 0 ? Math.round((startMs(next, trip) - nowMs) / 60000) : 0;
   const countdown = diff > 0 ? t('in {time}', { time: ((Math.floor(diff / 60) ? Math.floor(diff / 60) + ' ' + t('h') + ' ' : '') + (diff % 60 ? (diff % 60) + ' min' : '')).trim() }) : '';
@@ -88,16 +90,26 @@ export default function Today({ ctx }) {
               <span className="soft" style={{ fontSize: 15 }}>{timeLabel(next, trip)}{next.place ? ' · ' + next.place : ''}</span>
             </div>
           </div>
-          <div className="row">
-            <a className="btn light" href={mapsUrl(next.q || next.place || next.title)} target="_blank" rel="noopener noreferrer">
-              <Icon d="pin" size={18} stroke={2} />{t('Directions')}
-            </a>
+          {/* With a ticket attached, the ticket becomes the main button and directions shrink to an icon. */}
+          <div className="row" style={{ gap: 8 }}>
+            {hasTicket ? (
+              <>
+                <TicketButton ctx={ctx} item={next} className="btn light" style={{ flex: '1 1 auto', padding: '0 14px' }} label={t('Ticket')} />
+                <a className="btn ghost" style={{ flex: '0 0 auto', padding: '0 13px' }} href={mapsUrl(next.q || next.place || next.title)} target="_blank" rel="noopener noreferrer" aria-label={t('Directions')}>
+                  <Icon d="pin" size={20} stroke={2} />
+                </a>
+              </>
+            ) : (
+              <a className="btn light" href={mapsUrl(next.q || next.place || next.title)} target="_blank" rel="noopener noreferrer">
+                <Icon d="pin" size={18} stroke={2} />{t('Directions')}
+              </a>
+            )}
             {next.type !== 'flight' && next.place && (
-              <button className="btn ghost" style={{ flex: '0 0 auto', padding: '0 14px' }} aria-label={t('Show the driver')} onClick={() => open({ kind: 'driver', id: next.id })}>
+              <button className="btn ghost" style={{ flex: '0 0 auto', padding: '0 13px' }} aria-label={t('Show the driver')} onClick={() => open({ kind: 'driver', id: next.id })}>
                 <Icon d="car" size={20} stroke={2} />
               </button>
             )}
-            <button className="btn ghost" onClick={() => open({ kind: 'item', id: next.id })}>{t('Details')}</button>
+            <button className="btn ghost" style={hasTicket ? { flex: '0 0 auto', padding: '0 14px' } : undefined} onClick={() => open({ kind: 'item', id: next.id })}>{t('Details')}</button>
           </div>
         </div>
       ) : (
